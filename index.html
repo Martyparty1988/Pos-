@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/Pos-/manifest.json">
     <title>Villa POS</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet">
+    <link href="/Pos-/styles.css" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
@@ -119,11 +119,11 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-    <script src="inventory.js"></script>
-    <script src="app.js"></script>
+    <script src="/Pos-/inventory.js"></script>
+    <script src="/Pos-/app.js"></script>
     <script>
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/service-worker.js')
+            navigator.serviceWorker.register('/Pos-/service-worker.js')
                 .then(registration => console.log('Service Worker registered.'))
                 .catch(error => console.log('Service Worker registration failed:', error));
         }
