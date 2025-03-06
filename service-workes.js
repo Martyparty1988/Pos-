@@ -1,29 +1,30 @@
 const CACHE_NAME = 'villa-pos-cache-v1';
 const urlsToCache = [
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/inventory.js',
-    '/images/cola.png',
-    '/images/sprite.png',
-    '/images/fanta.png',
-    '/images/malibu.png',
-    '/images/jack.png',
-    '/images/moscow.png',
-    '/images/gin.png',
-    '/images/mojito.png',
-    '/images/redbull.png',
-    '/images/budvar.png',
-    '/images/prosecco.png',
-    '/images/keg.png',
-    '/images/pivo50.png',
-    '/images/Plyn.png',
-    '/images/grill.png',
-    '/images/wellness.png',
-    '/images/icon-192.png',
-    '/images/icon-512.png'
+    '/villa-pos/index.html',
+    '/villa-pos/styles.css',
+    '/villa-pos/app.js',
+    '/villa-pos/inventory.js',
+    '/villa-pos/images/cola.png',
+    '/villa-pos/images/sprite.png',
+    '/villa-pos/images/fanta.png',
+    '/villa-pos/images/malibu.png',
+    '/villa-pos/images/jack.png',
+    '/villa-pos/images/moscow.png',
+    '/villa-pos/images/gin.png',
+    '/villa-pos/images/mojito.png',
+    '/villa-pos/images/redbull.png',
+    '/villa-pos/images/budvar.png',
+    '/villa-pos/images/prosecco.png',
+    '/villa-pos/images/keg.png',
+    '/villa-pos/images/pivo50.png',
+    '/villa-pos/images/Plyn.png',
+    '/villa-pos/images/grill.png',
+    '/villa-pos/images/wellness.png',
+    '/villa-pos/images/icon-192.png',
+    '/villa-pos/images/icon-512.png'
 ];
 
+// Zbytek kódu zůstává stejný
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
