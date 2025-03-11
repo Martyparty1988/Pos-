@@ -1,116 +1,22 @@
 {
   "name": "Villa POS",
   "short_name": "VillaPOS",
-  "description": "Point of Sale systém pro vily s podporou správy skladu a statistik",
+  "description": "Point of Sale systém pro Villa",
   "start_url": "/index.html",
   "display": "standalone",
   "background_color": "#2c3e50",
   "theme_color": "#2c3e50",
-  "orientation": "portrait-primary",
-  "scope": "/",
-  "lang": "cs",
-  "prefer_related_applications": false,
+  "orientation": "portrait",
   "icons": [
     {
-      "src": "images/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/icon-192x192.png",
+      "src": "images/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
-      "src": "images/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/icon-512x512.png",
+      "src": "images/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "images/maskable-icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "maskable"
+      "type": "image/png"
     }
-  ],
-  "shortcuts": [
-    {
-      "name": "POS Systém",
-      "short_name": "POS",
-      "description": "Otevřít hlavní POS rozhraní",
-      "url": "/index.html?page=pos",
-      "icons": [{ "src": "images/pos-icon.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Správa skladu",
-      "short_name": "Sklad",
-      "description": "Přejít na správu skladu",
-      "url": "/index.html?page=inventory",
-      "icons": [{ "src": "images/inventory-icon.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Statistiky",
-      "short_name": "Statistiky",
-      "description": "Zobrazit statistiky prodejů",
-      "url": "/index.html?page=stats",
-      "icons": [{ "src": "images/stats-icon.png", "sizes": "192x192" }]
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "images/screenshot-pos.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "POS rozhraní Villa POS"
-    },
-    {
-      "src": "images/screenshot-inventory.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "Správa skladu Villa POS"
-    },
-    {
-      "src": "images/screenshot-stats.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "platform": "wide",
-      "label": "Statistiky prodejů Villa POS"
-    }
-  ],
-  "categories": ["business", "finance", "productivity"]
+  ]
 }
