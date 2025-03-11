@@ -3,7 +3,7 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
 :root {
@@ -24,7 +24,7 @@ html {
 }
 
 body {
-    background-color: var(--light-color);
+    background-color: #f0f8ff;
     color: var(--dark-color);
     min-height: 100vh;
     display: flex;
@@ -36,77 +36,48 @@ body {
     display: none !important;
 }
 
-/* Téma */
-.dark-theme {
-    --primary-color: #1a1a2e;
-    --secondary-color: #16213e;
-    --accent-color: #ff4c29;
-    --light-color: #e8e8e8;
-    --dark-color: #121212;
-    background-color: var(--dark-color);
-    color: var(--light-color);
-}
-
-.light-theme {
-    --primary-color: #2c3e50;
-    --secondary-color: #34495e;
-    --accent-color: #e74c3c;
-    --light-color: #ecf0f1;
-    --dark-color: #2c3e50;
-}
-
-/* Hlavní navigace */
+/* Horní navigace */
 .main-nav {
     display: flex;
-    background-color: var(--primary-color);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: var(--secondary-color);
+    overflow-x: auto;
+    white-space: nowrap;
 }
 
 .nav-item {
-    flex: 1;
-    padding: 15px;
+    padding: 15px 0;
+    flex-grow: 1;
     text-align: center;
-    border: none;
-    background: transparent;
-    color: var(--light-color);
     font-weight: bold;
+    background: none;
+    border: none;
+    color: white;
+    min-width: 80px;
     cursor: pointer;
-    transition: all 0.2s;
 }
 
 .nav-item.active {
     background-color: var(--accent-color);
 }
 
-.nav-item:hover:not(.active) {
-    background-color: rgba(255, 255, 255, 0.1);
-}
-
-/* Stránky */
-.page {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-}
-
 /* Záhlaví */
 header {
-    background-color: var(--primary-color);
-    color: var(--light-color);
-    padding: var(--spacing);
+    padding: 20px;
     text-align: center;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: var(--primary-color);
+    color: white;
 }
 
 header h1 {
-    margin-bottom: 5px;
+    font-size: 2rem;
+    margin: 0;
 }
 
 #status-bar {
+    margin-top: 10px;
+    font-size: 0.9rem;
     display: flex;
-    justify-content: space-between;
-    font-size: 0.8rem;
-    padding: 5px 0;
+    justify-content: center;
 }
 
 .online {
@@ -119,259 +90,154 @@ header h1 {
 
 /* Výběr lokace */
 .location-selector {
-    background-color: var(--secondary-color);
-    padding: var(--spacing);
+    background-color: #f5f5f5;
+    padding: 10px;
     text-align: center;
 }
 
 #location-select {
-    padding: 8px;
-    border-radius: 4px;
-    border: none;
-    width: 100%;
+    width: 90%;
     max-width: 300px;
-    background-color: var(--light-color);
+    padding: 10px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 16px;
 }
 
-/* Vyhledávací panel */
+/* Vyhledávání */
 .search-container {
-    background-color: var(--secondary-color);
-    padding: var(--spacing);
+    padding: 10px;
     display: flex;
     justify-content: center;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
 }
 
 #search-input {
-    padding: 8px;
-    border-radius: 4px 0 0 4px;
-    border: none;
-    width: 100%;
-    max-width: 300px;
+    width: 80%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px 0 0 5px;
+    font-size: 16px;
 }
 
 #search-button {
-    padding: 8px 12px;
-    border: none;
-    border-radius: 0 4px 4px 0;
+    padding: 10px 15px;
     background-color: var(--accent-color);
-    color: var(--light-color);
-    cursor: pointer;
+    color: white;
+    border: none;
+    border-radius: 0 5px 5px 0;
 }
 
-#search-button img {
-    width: 16px;
-    height: 16px;
-    filter: invert(1);
-}
-
-/* Navigace kategorií */
+/* Kategorie */
 nav {
-    background-color: var(--secondary-color);
-    padding: var(--spacing);
     display: flex;
-    justify-content: center;
-    gap: var(--spacing);
-    flex-wrap: wrap;
+    overflow-x: auto;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-bottom: 1px solid #ddd;
 }
 
 .category {
-    padding: 8px 12px;
+    margin: 0 5px;
+    padding: 10px 20px;
     border: none;
-    border-radius: 4px;
-    background-color: var(--dark-color);
-    color: var(--light-color);
+    border-radius: 20px;
+    background-color: #ddd;
+    white-space: nowrap;
     cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.category:hover {
-    opacity: 0.9;
 }
 
 .category.active {
     background-color: var(--accent-color);
+    color: white;
 }
 
-/* Hlavní obsah */
-main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    padding: var(--spacing);
-}
-
-@media (min-width: 768px) {
-    main {
-        flex-direction: row;
-    }
-}
-
-/* Seznam produktů */
-.container {
-    flex: 2;
+/* Produkty */
+#product-list {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: var(--spacing);
-    margin-bottom: var(--spacing);
-}
-
-@media (min-width: 768px) {
-    .container {
-        margin-right: var(--spacing);
-        margin-bottom: 0;
-    }
+    gap: 15px;
+    padding: 15px;
+    background-color: #f0f8ff;
 }
 
 .product {
-    background-color: #fff;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
+    cursor: pointer;
     transition: transform 0.2s;
 }
 
 .product:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-5px);
+}
+
+.product-card {
+    background-color: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 .product-image {
-    height: 120px;
+    height: 150px;
     overflow: hidden;
 }
 
 .product-image img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s;
-}
-
-.product:hover .product-image img {
-    transform: scale(1.05);
+    object-fit: contain;
+    padding: 10px;
 }
 
 .product-info {
-    padding: var(--spacing);
+    padding: 10px;
     text-align: center;
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    background-color: white;
 }
 
 .product-info h3 {
-    font-size: 1rem;
+    margin: 0;
+    font-size: 16px;
     margin-bottom: 5px;
-    color: var(--dark-color);
 }
 
 .price {
     font-weight: bold;
-    color: var(--accent-color);
-}
-
-.product-controls {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--spacing);
-    background-color: var(--light-color);
-}
-
-.add-btn, .remove-btn {
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1.2rem;
-    cursor: pointer;
-}
-
-.add-btn {
-    background-color: var(--success-color);
-    color: var(--light-color);
-}
-
-.remove-btn {
-    background-color: var(--danger-color);
-    color: var(--light-color);
-}
-
-.product-count {
-    font-weight: bold;
-    min-width: 30px;
-    text-align: center;
-}
-
-.no-products, .loading {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 2rem;
-    color: var(--dark-color);
+    color: #333;
 }
 
 /* Košík */
 .cart-container {
-    flex: 1;
-    background-color: #fff;
-    border-radius: 8px;
-    padding: var(--spacing);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-    display: flex;
-    flex-direction: column;
-    max-height: 600px;
+    background-color: white;
+    padding: 15px;
+    margin: 15px;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
 }
 
 .cart-container h2 {
-    margin-bottom: var(--spacing);
-    padding-bottom: 5px;
-    border-bottom: 2px solid var(--primary-color);
     text-align: center;
-    color: var(--primary-color);
-}
-
-#cart-items {
-    flex-grow: 1;
-    overflow-y: auto;
-    margin-bottom: var(--spacing);
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
 }
 
 .empty-cart {
     text-align: center;
-    padding: 2rem;
+    padding: 20px;
     color: #999;
     font-style: italic;
-}
-
-.cart-location-header, .cart-category-header {
-    padding: 5px 0;
-    font-weight: bold;
-    color: var(--dark-color);
-}
-
-.cart-location-header {
-    font-size: 1.1rem;
-    border-bottom: 1px solid var(--primary-color);
-    margin-top: var(--spacing);
-}
-
-.cart-category-header {
-    font-size: 0.9rem;
-    margin-top: 5px;
-    color: var(--secondary-color);
 }
 
 .cart-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
+    padding: 10px 0;
     border-bottom: 1px solid #eee;
 }
 
@@ -381,54 +247,42 @@ main {
 
 .cart-item-name {
     display: block;
-    font-size: 0.9rem;
+    font-weight: bold;
 }
 
 .cart-item-price {
     display: block;
-    font-size: 0.8rem;
+    font-size: 0.9em;
     color: #666;
 }
 
 .cart-item-quantity {
     display: flex;
     align-items: center;
-    gap: 5px;
     margin: 0 10px;
 }
 
-.cart-add-btn, .cart-remove-btn {
-    width: 24px;
-    height: 24px;
+.cart-item-quantity button {
+    width: 30px;
+    height: 30px;
     border: none;
-    border-radius: 50%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 1rem;
+    background-color: #f0f0f0;
+    border-radius: 15px;
+    font-weight: bold;
     cursor: pointer;
 }
 
-.cart-add-btn {
-    background-color: var(--success-color);
-    color: var(--light-color);
-}
-
-.cart-remove-btn {
-    background-color: var(--danger-color);
-    color: var(--light-color);
+.cart-item-quantity span {
+    margin: 0 10px;
 }
 
 .cart-item-total {
     font-weight: bold;
-    min-width: 70px;
-    text-align: right;
 }
 
 .cart-summary {
-    padding: var(--spacing) 0;
+    padding: 15px 0;
     border-top: 1px solid #eee;
-    margin-top: auto;
 }
 
 .cart-summary p {
@@ -439,25 +293,26 @@ main {
 
 .cart-actions {
     display: flex;
-    gap: var(--spacing);
+    gap: 10px;
 }
 
 .cart-actions button {
     flex: 1;
     padding: 10px;
     border: none;
-    border-radius: 4px;
+    border-radius: 5px;
+    font-weight: bold;
     cursor: pointer;
 }
 
 #clear-cart {
-    background-color: var(--warning-color);
-    color: var(--light-color);
+    background-color: #f8f8f8;
+    color: #333;
 }
 
 #checkout {
-    background-color: var(--success-color);
-    color: var(--light-color);
+    background-color: var(--accent-color);
+    color: white;
 }
 
 /* Modální okna */
@@ -468,16 +323,16 @@ main {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 100;
     justify-content: center;
     align-items: center;
 }
 
 .modal-content {
-    background-color: #fff;
-    border-radius: 8px;
+    background-color: white;
     padding: 20px;
+    border-radius: 10px;
     width: 90%;
     max-width: 500px;
     max-height: 80vh;
@@ -489,65 +344,13 @@ main {
     position: absolute;
     top: 10px;
     right: 10px;
-    font-size: 1.5rem;
+    font-size: 24px;
     cursor: pointer;
 }
 
-/* Checkout modální okno */
-.checkout-summary {
-    margin: 20px 0;
+/* Responzivní design */
+@media (min-width: 768px) {
+    #product-list {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    }
 }
-
-.checkout-summary h3 {
-    margin-bottom: 10px;
-}
-
-.checkout-items {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-bottom: 15px;
-}
-
-.checkout-location-header, .checkout-category-header {
-    padding: 5px 0;
-    font-weight: bold;
-}
-
-.checkout-location-header {
-    font-size: 1.1rem;
-    border-bottom: 1px solid var(--primary-color);
-    margin-top: 15px;
-}
-
-.checkout-category-header {
-    font-size: 0.9rem;
-    margin-top: 10px;
-    color: var(--secondary-color);
-}
-
-.checkout-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid #eee;
-}
-
-.checkout-total {
-    text-align: right;
-    font-weight: bold;
-    margin-top: 15px;
-}
-
-.checkout-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.checkout-actions button {
-    flex: 1;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
