@@ -2,9 +2,6 @@
 
 // Inventář produktů pro každou lokaci
 const inventoryItems = [
-    // Blank first item
-    { name: '', price: 0, currency: 'CZK', image: '', category: '' },
-    
     // 1. Nealkoholické nápoje
     { name: 'Coca-Cola', price: 32, currency: 'CZK', image: 'images/cola.png', category: 'non-alcoholic' },
     { name: 'Sprite', price: 32, currency: 'CZK', image: 'images/sprite.png', category: 'non-alcoholic' },
@@ -21,8 +18,8 @@ const inventoryItems = [
     
     // 3. Piva
     { name: 'Budvar', price: 59, currency: 'CZK', image: 'images/budvar.png', category: 'beer' },
-    { name: 'Sud 30 litrů', price: 125, currency: 'EUR', image: 'images/keg.png', category: 'beer' },
-    { name: 'Sud 50 litrů', price: 175, currency: 'EUR', image: 'images/pivo50.png', category: 'beer' },
+    { name: 'Sud 30 litrů', price: 125, currency: 'EUR', image: 'images/30keg.png', category: 'beer' },
+    { name: 'Sud 50 litrů', price: 175, currency: 'EUR', image: 'images/50keg.png', category: 'beer' },
     { name: 'Budvar plechovka', price: 59, currency: 'CZK', image: 'images/budvar.png', category: 'beer' },
     
     // 4. Relax
@@ -45,9 +42,9 @@ function getProductsByCategory(category, location = 'oh-yeah') {
     }
     
     if (category === 'all') {
-        return inventory[location].filter(item => item.name !== '');
+        return inventory[location];
     }
-    return inventory[location].filter(item => item.category === category && item.name !== '');
+    return inventory[location].filter(item => item.category === category);
 }
 
 // Funkce pro vyhledávání produktů podle názvu
@@ -57,10 +54,10 @@ function searchProducts(query, location = 'oh-yeah') {
     }
     
     const searchTerm = query.toLowerCase().trim();
-    if (!searchTerm) return inventory[location].filter(item => item.name !== '');
+    if (!searchTerm) return inventory[location];
     
     return inventory[location].filter(product => 
-        product.name.toLowerCase().includes(searchTerm) && product.name !== ''
+        product.name.toLowerCase().includes(searchTerm)
     );
 }
 
