@@ -4,16 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2c3e50">
-    <meta name="description" content="Villa POS - systém pro správu prodejů, skladu a statistik">
     <title>Villa POS</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="images/icon-192x192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
+    <link rel="apple-touch-icon" href="images/icon-192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
 </head>
-<body class="light-theme">
-    <!-- Horní navigační panel pro sekce aplikace -->
+<body>
+    <!-- Hlavní navigace -->
     <nav class="main-nav">
         <button id="nav-pos" class="nav-item active">POS</button>
         <button id="nav-inventory" class="nav-item">Sklad</button>
@@ -27,7 +25,6 @@
             <h1>Villa POS</h1>
             <div id="status-bar">
                 <span id="connection-status" class="online">Online</span>
-                <span id="current-date"></span>
             </div>
         </header>
 
@@ -42,7 +39,10 @@
         <div class="search-container">
             <input type="text" id="search-input" placeholder="Vyhledat produkt...">
             <button id="search-button">
-                <img src="images/search-icon.svg" alt="Hledat">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
             </button>
         </div>
 
@@ -54,169 +54,58 @@
             <button class="category" data-category="relax">Relax</button>
         </nav>
 
-        <main>
-            <div class="container" id="product-list">
-                <!-- Produkty budou načteny dynamicky z JavaScriptu -->
-                <div class="loading">Načítání produktů...</div>
-            </div>
+        <div id="product-list">
+            <!-- Produkty budou přidány dynamicky -->
+        </div>
 
-            <div class="cart-container">
-                <h2>Košík</h2>
-                <div id="cart-items">
-                    <!-- Položky košíku budou přidány dynamicky -->
-                    <div class="empty-cart">Košík je prázdný</div>
-                </div>
-                <div class="cart-summary">
-                    <p>Počet položek: <span id="item-count">0</span></p>
-                    <p>Celkem CZK: <span id="total-price-czk">0 CZK</span></p>
-                    <p>Celkem EUR: <span id="total-price-eur">0 EUR</span></p>
-                </div>
-                <div class="cart-actions">
-                    <button id="clear-cart">Vymazat</button>
-                    <button id="checkout">Dokončit objednávku</button>
-                </div>
+        <div class="cart-container">
+            <h2>Košík</h2>
+            <div id="cart-items">
+                <div class="empty-cart">Košík je prázdný</div>
             </div>
-        </main>
+            <div class="cart-summary">
+                <p>Počet položek: <span id="item-count">0</span></p>
+                <p>Celkem CZK: <span id="total-price-czk">0 CZK</span></p>
+                <p>Celkem EUR: <span id="total-price-eur">0 EUR</span></p>
+            </div>
+            <div class="cart-actions">
+                <button id="clear-cart">Vymazat</button>
+                <button id="checkout">Hotovo</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Stránka správy skladu -->
+    <!-- Sklad stránka -->
     <div id="inventory-page" class="page hidden">
         <header>
             <h1>Správa skladu</h1>
         </header>
-
-        <div class="inventory-actions">
-            <button id="reset-stock-btn" class="action-btn">Resetovat sklad</button>
-            <button id="export-stock-btn" class="action-btn">Export skladu (CSV)</button>
-            <button id="add-item-btn" class="action-btn">Přidat položku</button>
-        </div>
-
-        <div class="inventory-filter">
-            <input type="text" id="inventory-search" placeholder="Vyhledat položku...">
-            <select id="inventory-location-filter">
-                <option value="all">Všechny lokace</option>
-                <option value="oh-yeah">Oh Yeah</option>
-                <option value="amazing-pool">Amazing Pool</option>
-                <option value="little-castle">Little Castle</option>
-            </select>
-            <select id="inventory-category-filter">
-                <option value="all">Všechny kategorie</option>
-                <option value="non-alcoholic">Nealko</option>
-                <option value="alcoholic">Alkohol</option>
-                <option value="beer">Piva</option>
-                <option value="relax">Relax</option>
-            </select>
-        </div>
-
-        <div class="inventory-container">
-            <table class="inventory-table">
-                <thead>
-                    <tr>
-                        <th>Lokace</th>
-                        <th>Produkt</th>
-                        <th>Kategorie</th>
-                        <th>Cena</th>
-                        <th>Skladem</th>
-                        <th>Akce</th>
-                    </tr>
-                </thead>
-                <tbody id="stock-table-body">
-                    <!-- Položky skladu budou přidány dynamicky -->
-                </tbody>
-            </table>
+        <div class="placeholder-content">
+            <p>Zde bude správa skladu</p>
         </div>
     </div>
 
-    <!-- Stránka statistik -->
+    <!-- Statistiky stránka -->
     <div id="stats-page" class="page hidden">
         <header>
             <h1>Statistiky prodejů</h1>
         </header>
-
-        <div class="stats-actions">
-            <button id="refresh-stats-btn" class="action-btn">Aktualizovat statistiky</button>
-            <button id="export-sales-btn" class="action-btn">Export prodejů (CSV)</button>
-            <div class="date-filter">
-                <label for="date-from">Od:</label>
-                <input type="date" id="date-from">
-                <label for="date-to">Do:</label>
-                <input type="date" id="date-to">
-                <button id="apply-date-filter" class="action-btn">Filtrovat</button>
-            </div>
-        </div>
-
-        <div class="stats-container">
-            <div id="sales-stats-container">
-                <!-- Statistiky budou přidány dynamicky -->
-                <div class="loading">Načítání statistik...</div>
-            </div>
+        <div class="placeholder-content">
+            <p>Zde budou statistiky</p>
         </div>
     </div>
 
-    <!-- Stránka nastavení -->
+    <!-- Nastavení stránka -->
     <div id="settings-page" class="page hidden">
         <header>
             <h1>Nastavení aplikace</h1>
         </header>
-
-        <div class="settings-container">
-            <div class="settings-section">
-                <h2>Vzhled</h2>
-                
-                <div class="setting-group">
-                    <label for="theme-select">Téma:</label>
-                    <select id="theme-select">
-                        <option value="light-theme">Světlé</option>
-                        <option value="dark-theme">Tmavé</option>
-                    </select>
-                </div>
-                
-                <div class="setting-group">
-                    <label for="font-size-slider">Velikost písma: <span id="font-size-value">16px</span></label>
-                    <input type="range" id="font-size-slider" min="12" max="24" value="16">
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h2>Data</h2>
-                
-                <div class="setting-group">
-                    <button id="export-data" class="setting-btn">Exportovat data (JSON)</button>
-                    <button id="import-data" class="setting-btn">Importovat data</button>
-                    <input type="file" id="import-file" accept=".json" class="hidden">
-                </div>
-                
-                <div class="setting-group">
-                    <button id="clear-data" class="setting-btn danger">Vymazat všechna data</button>
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h2>Měna</h2>
-                
-                <div class="setting-group">
-                    <label for="exchange-rate">Kurz EUR/CZK:</label>
-                    <input type="number" id="exchange-rate" min="1" step="0.01" value="25.50">
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <h2>O aplikaci</h2>
-                
-                <div class="about-info">
-                    <p>Villa POS v1.0</p>
-                    <p>Vytvořeno pro správu prodejů ve vilách</p>
-                    <p>&copy; 2025 Villa POS</p>
-                </div>
-            </div>
+        <div class="placeholder-content">
+            <p>Zde bude nastavení</p>
         </div>
     </div>
 
-    <footer>
-        <p>&copy; 2025 Villa POS - Vytvořeno pro potřeby provozu</p>
-    </footer>
-
-    <!-- Modal pro vlastní cenu -->
+    <!-- Modální okno pro vlastní cenu -->
     <div id="custom-price-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -233,7 +122,7 @@
         </div>
     </div>
 
-    <!-- Modal pro dokončení objednávky -->
+    <!-- Modální okno pro dokončení objednávky -->
     <div id="checkout-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -247,187 +136,14 @@
                 <p class="checkout-total">Celkem EUR: <span id="checkout-total-eur">0 EUR</span></p>
             </div>
             <div class="checkout-actions">
-                <button id="print-receipt">Vytisknout účtenku</button>
-                <button id="export-pdf">Exportovat do PDF</button>
-                <button id="complete-order">Dokončit a zaplatit</button>
+                <button id="print-receipt">Tisk účtenky</button>
+                <button id="complete-order">Dokončit</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal pro přidání/úpravu položky skladu -->
-    <div id="item-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2 id="item-modal-title">Přidat novou položku</h2>
-            <form id="item-form">
-                <input type="hidden" id="item-index" value="">
-                <input type="hidden" id="item-mode" value="add">
-                
-                <div class="form-group">
-                    <label for="item-name">Název:</label>
-                    <input type="text" id="item-name" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="item-price">Cena:</label>
-                    <input type="number" id="item-price" min="0" step="0.01">
-                </div>
-                
-                <div class="form-group">
-                    <label for="item-currency">Měna:</label>
-                    <select id="item-currency">
-                        <option value="CZK">CZK</option>
-                        <option value="EUR">EUR</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="item-category">Kategorie:</label>
-                    <select id="item-category">
-                        <option value="non-alcoholic">Nealko</option>
-                        <option value="alcoholic">Alkohol</option>
-                        <option value="beer">Piva</option>
-                        <option value="relax">Relax</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="item-location">Lokace:</label>
-                    <select id="item-location">
-                        <option value="all">Všechny lokace</option>
-                        <option value="oh-yeah">Oh Yeah</option>
-                        <option value="amazing-pool">Amazing Pool</option>
-                        <option value="little-castle">Little Castle</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="item-stock">Počáteční stav skladu:</label>
-                    <input type="number" id="item-stock" min="0" value="50">
-                </div>
-                
-                <div class="form-group checkbox-group">
-                    <label for="item-custom-price">
-                        <input type="checkbox" id="item-custom-price">
-                        Vlastní cena při prodeji
-                    </label>
-                </div>
-                
-                <button type="button" id="save-item-btn" class="modal-btn">Uložit</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Offline notifikace -->
-    <div id="offline-notification" class="notification hidden">
-        <p>Jste offline. Některé funkce nemusí být dostupné.</p>
-    </div>
-
     <!-- Skripty -->
     <script src="inventory.js"></script>
-    <script src="inventory-management.js"></script>
     <script src="app.js"></script>
-    <script>
-        // Registrace service workeru pro PWA funkcionalitu
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('service-worker.js')
-                    .then(registration => {
-                        console.log('Service Worker registrován úspěšně:', registration);
-                    })
-                    .catch(error => {
-                        console.log('Registrace Service Workeru se nezdařila:', error);
-                    });
-            });
-        }
-        
-        // Parametry z URL pro otevření konkrétní stránky aplikace
-        window.addEventListener('load', () => {
-            // Zkontrolujeme URL parametry pro přímý přístup ke stránkám
-            const urlParams = new URLSearchParams(window.location.search);
-            const page = urlParams.get('page');
-            
-            if (page) {
-                switch (page) {
-                    case 'inventory':
-                        switchPage('inventory');
-                        break;
-                    case 'stats':
-                        switchPage('stats');
-                        break;
-                    case 'settings':
-                        switchPage('settings');
-                        break;
-                    default:
-                        switchPage('pos');
-                }
-            }
-            
-            // Inicializace správy skladu
-            if (window.inventoryManagement) {
-                window.inventoryManagement.initInventoryManagement();
-            }
-            
-            // Navigace mezi stránkami
-            document.getElementById('nav-pos').addEventListener('click', () => switchPage('pos'));
-            document.getElementById('nav-inventory').addEventListener('click', () => switchPage('inventory'));
-            document.getElementById('nav-stats').addEventListener('click', () => switchPage('stats'));
-            document.getElementById('nav-settings').addEventListener('click', () => switchPage('settings'));
-            
-            // Funkce pro přepínání stránek
-            function switchPage(page) {
-                document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
-                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-                
-                document.getElementById(`${page}-page`).classList.remove('hidden');
-                document.getElementById(`nav-${page}`).classList.add('active');
-                
-                // Aktualizace obsahu stránky
-                if (page === 'inventory' && window.inventoryManagement) {
-                    window.inventoryManagement.displayStockLevels();
-                } else if (page === 'stats' && window.inventoryManagement) {
-                    window.inventoryManagement.generateSalesStats();
-                }
-            }
-            
-            // Aktualizace statistik
-            const refreshStatsBtn = document.getElementById('refresh-stats-btn');
-            if (refreshStatsBtn && window.inventoryManagement) {
-                refreshStatsBtn.addEventListener('click', () => {
-                    window.inventoryManagement.generateSalesStats();
-                });
-            }
-            
-            // Filtrování podle data
-            const applyDateFilterBtn = document.getElementById('apply-date-filter');
-            if (applyDateFilterBtn && window.inventoryManagement) {
-                applyDateFilterBtn.addEventListener('click', () => {
-                    const dateFrom = document.getElementById('date-from').value;
-                    const dateTo = document.getElementById('date-to').value;
-                    window.inventoryManagement.generateSalesStats(dateFrom, dateTo);
-                });
-            }
-            
-            // Nastavení aktuálního data pro filtr statistik
-            const setDefaultDates = () => {
-                const today = new Date();
-                const lastMonth = new Date();
-                lastMonth.setMonth(today.getMonth() - 1);
-                
-                const dateFromInput = document.getElementById('date-from');
-                const dateToInput = document.getElementById('date-to');
-                
-                if (dateFromInput) {
-                    dateFromInput.valueAsDate = lastMonth;
-                }
-                
-                if (dateToInput) {
-                    dateToInput.valueAsDate = today;
-                }
-            };
-            
-            setDefaultDates();
-        });
-    </script>
 </body>
 </html>
