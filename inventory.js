@@ -1,365 +1,543 @@
-// Globální proměnné pro správu inventáře
-let products = [];
-let currentProductId = null;
+// Správa skladu pro Villa POS
 
-// DOM elementy
-const inventorySection = document.getElementById('inventory-section');
-const inventoryBody = document.getElementById('inventory-body');
-const inventorySearchInput = document.getElementById('inventory-search-input');
-const addProductBtn = document.getElementById('add-product-btn');
-const productModal = document.getElementById('product-modal');
-const productForm = document.getElementById('product-form');
-const modalTitle = document.getElementById('modal-title');
-const productIdInput = document.getElementById('product-id');
-const productNameInput = document.getElementById('product-name');
-const productPriceInput = document.getElementById('product-price');
-const productStockInput = document.getElementById('product-stock');
-const cancelBtn = document.getElementById('cancel-btn');
-const confirmModal = document.getElementById('confirm-modal');
-const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-const closeButtons = document.querySelectorAll('.close');
+// Skladové zásoby - počet jednotek od každého produktu v každé lokaci
+let stockLevels = {
+    'oh-yeah': {},
+    'amazing-pool': {},
+    'little-castle': {}
+};
 
-// Event listenery
-document.addEventListener('DOMContentLoaded', () => {
-    // Přepínání navigace pro sklad
-    document.getElementById('inventory-link').addEventListener('click', (e) => {
-        e.preventDefault();
-        showSection('inventory-section');
-        loadProducts();
-    });
+// Historie prodejů
+let salesHistory = [];
 
-    // Inicializace event listenerů pro správu inventáře
-    if (inventorySearchInput) {
-        inventorySearchInput.addEventListener('input', filterProducts);
-    }
-
-    if (addProductBtn) {
-        addProductBtn.addEventListener('click', showAddProductModal);
-    }
-
-    if (productForm) {
-        productForm.addEventListener('submit', saveProduct);
-    }
-
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', closeProductModal);
-    }
-
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', confirmDeleteProduct);
-    }
-
-    if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', closeConfirmModal);
-    }
-
-    // Zavírání modálních oken kliknutím na křížek
-    closeButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            const modal = this.closest('.modal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        });
-    });
-
-    // Zavírání modálních oken kliknutím mimo obsah
-    window.addEventListener('click', (e) => {
-        if (e.target === productModal) {
-            closeProductModal();
+// Nastavení výchozích skladových zásob
+function initializeStock() {
+    // Načtení z localStorage, pokud existuje
+    const savedStock = localStorage.getItem('villapos-stock');
+    if (savedStock && savedStock !== "") {
+        try {
+            stockLevels = JSON.parse(savedStock);
+            console.log("Skladové zásoby načteny z localStorage");
+        } catch (e) {
+            console.error("Chyba při načítání skladových zásob:", e);
+            resetStockToDefault();
         }
-        if (e.target === confirmModal) {
-            closeConfirmModal();
-        }
-    });
-});
-
-/**
- * Načte produkty z API
- */
-function loadProducts() {
-    // Zobrazení indikátoru načítání
-    inventoryBody.innerHTML = '<tr><td colspan="5" class="text-center">Načítání produktů...</td></tr>';
-    
-    fetch('/api/products')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Nepodařilo se načíst produkty');
-            }
-            return response.json();
-        })
-        .then(data => {
-            products = data;
-            renderProducts();
-        })
-        .catch(error => {
-            console.error('Chyba při načítání produktů:', error);
-            inventoryBody.innerHTML = `<tr><td colspan="5" class="text-center error">Chyba: ${error.message}</td></tr>`;
-        });
+    } else {
+        resetStockToDefault();
+    }
 }
 
-/**
- * Vykreslí produkty do tabulky
- * @param {Array} filteredProducts - Pole produktů k vykreslení (volitelné)
- */
-function renderProducts(filteredProducts) {
-    const productsToRender = filteredProducts || products;
+// Resetování skladových zásob na výchozí hodnoty
+function resetStockToDefault() {
+    console.log("Nastavuji výchozí skladové zásoby");
     
-    // Vyčištění tabulky
-    inventoryBody.innerHTML = '';
+    // Pro každou lokaci a každý produkt nastavíme výchozí počet
+    Object.keys(inventory).forEach(location => {
+        stockLevels[location] = {};
+        
+        inventory[location].forEach((product, index) => {
+            if (product.name !== '') {
+                // Výchozí hodnota - 50 ks pro běžné položky, 5 ks pro dražší položky
+                let defaultStock = product.price > 100 ? 5 : 50;
+                
+                // Nastavíme specifické hodnoty pro některé kategorie
+                if (product.category === 'beer' && product.name.includes('Sud')) {
+                    defaultStock = 2; // Méně sudů
+                } else if (product.category === 'relax') {
+                    defaultStock = 1; // Jen 1 ks položek typu relax
+                }
+                
+                stockLevels[location][index] = defaultStock;
+            }
+        });
+    });
     
-    if (productsToRender.length === 0) {
-        inventoryBody.innerHTML = '<tr><td colspan="5" class="text-center">Žádné produkty k zobrazení</td></tr>';
+    // Uložení do localStorage
+    saveStockToStorage();
+}
+
+// Uložení skladových zásob do localStorage
+function saveStockToStorage() {
+    try {
+        localStorage.setItem('villapos-stock', JSON.stringify(stockLevels));
+    } catch (e) {
+        console.error("Chyba při ukládání skladových zásob:", e);
+    }
+}
+
+// Zobrazení skladových zásob v tabulce
+function displayStockLevels() {
+    const stockTableBody = document.getElementById('stock-table-body');
+    if (!stockTableBody) return;
+    
+    stockTableBody.innerHTML = '';
+    
+    // Získáme všechny produkty ze všech lokací
+    Object.keys(inventory).forEach(location => {
+        const items = inventory[location].filter(item => item.name !== '');
+        
+        items.forEach((item, index) => {
+            const stockLevel = stockLevels[location][index] || 0;
+            const lowStock = stockLevel < 5;
+            
+            const row = document.createElement('tr');
+            row.className = lowStock ? 'low-stock' : '';
+            
+            let locationName = 'Neznámá lokace';
+            if (location === 'oh-yeah') locationName = 'Oh Yeah';
+            else if (location === 'amazing-pool') locationName = 'Amazing Pool';
+            else if (location === 'little-castle') locationName = 'Little Castle';
+            
+            let categoryName = 'Ostatní';
+            if (item.category === 'non-alcoholic') categoryName = 'Nealko';
+            else if (item.category === 'alcoholic') categoryName = 'Alkohol';
+            else if (item.category === 'beer') categoryName = 'Piva';
+            else if (item.category === 'relax') categoryName = 'Relax';
+            
+            row.innerHTML = `
+                <td>${locationName}</td>
+                <td>${item.name}</td>
+                <td>${categoryName}</td>
+                <td>${item.price} ${item.currency}</td>
+                <td class="stock-level">${stockLevel}</td>
+                <td>
+                    <div class="stock-controls">
+                        <button class="stock-decrease" data-location="${location}" data-index="${index}">-</button>
+                        <input type="number" class="stock-input" data-location="${location}" data-index="${index}" value="${stockLevel}" min="0">
+                        <button class="stock-increase" data-location="${location}" data-index="${index}">+</button>
+                    </div>
+                </td>
+            `;
+            stockTableBody.appendChild(row);
+        });
+    });
+    
+    // Přidání event listenerů
+    document.querySelectorAll('.stock-decrease').forEach(button => {
+        button.addEventListener('click', () => {
+            const location = button.getAttribute('data-location');
+            const index = parseInt(button.getAttribute('data-index'));
+            decreaseStock(location, index);
+        });
+    });
+    
+    document.querySelectorAll('.stock-increase').forEach(button => {
+        button.addEventListener('click', () => {
+            const location = button.getAttribute('data-location');
+            const index = parseInt(button.getAttribute('data-index'));
+            increaseStock(location, index);
+        });
+    });
+    
+    document.querySelectorAll('.stock-input').forEach(input => {
+        input.addEventListener('change', () => {
+            const location = input.getAttribute('data-location');
+            const index = parseInt(input.getAttribute('data-index'));
+            updateStockDirectly(location, index, input.value);
+        });
+    });
+}
+
+// Snížení skladových zásob
+function decreaseStock(location, index) {
+    if (!stockLevels[location]) {
+        stockLevels[location] = {};
+    }
+    
+    const currentStock = stockLevels[location][index] || 0;
+    if (currentStock > 0) {
+        stockLevels[location][index] = currentStock - 1;
+        saveStockToStorage();
+        displayStockLevels();
+    }
+}
+
+// Zvýšení skladových zásob
+function increaseStock(location, index) {
+    if (!stockLevels[location]) {
+        stockLevels[location] = {};
+    }
+    
+    const currentStock = stockLevels[location][index] || 0;
+    stockLevels[location][index] = currentStock + 1;
+    saveStockToStorage();
+    displayStockLevels();
+}
+
+// Přímá aktualizace skladových zásob
+function updateStockDirectly(location, index, value) {
+    if (!stockLevels[location]) {
+        stockLevels[location] = {};
+    }
+    
+    // Validace vstupu
+    let newValue = parseInt(value);
+    if (isNaN(newValue) || newValue < 0) {
+        newValue = 0;
+    }
+    
+    stockLevels[location][index] = newValue;
+    saveStockToStorage();
+    displayStockLevels();
+}
+
+// Změna stavu skladu při přidání do košíku
+function updateStockOnCartAdd(location, index, quantity = 1) {
+    if (!stockLevels[location]) {
+        stockLevels[location] = {};
+    }
+    
+    const currentStock = stockLevels[location][index] || 0;
+    if (currentStock >= quantity) {
+        stockLevels[location][index] = currentStock - quantity;
+        saveStockToStorage();
+        return true; // Úspěšně odebráno ze skladu
+    } else {
+        return false; // Nedostatek zásob
+    }
+}
+
+// Vrácení položek zpět do skladu při odstranění z košíku
+function returnStockOnCartRemove(location, index, quantity = 1) {
+    if (!stockLevels[location]) {
+        stockLevels[location] = {};
+    }
+    
+    const currentStock = stockLevels[location][index] || 0;
+    stockLevels[location][index] = currentStock + quantity;
+    saveStockToStorage();
+}
+
+// Kontrola dostupnosti skladových zásob
+function checkStockAvailability(location, index, quantity = 1) {
+    if (!stockLevels[location]) {
+        return false;
+    }
+    
+    const currentStock = stockLevels[location][index] || 0;
+    return currentStock >= quantity;
+}
+
+// Zaznamenání prodeje
+function recordSale(saleData) {
+    // Načtení historie z localStorage
+    loadSalesHistory();
+    
+    // Přidání nového záznamu
+    salesHistory.push({
+        ...saleData,
+        timestamp: new Date().toISOString()
+    });
+    
+    // Uložení do localStorage
+    saveSalesHistory();
+}
+
+// Nahrání historie prodejů z localStorage
+function loadSalesHistory() {
+    const savedHistory = localStorage.getItem('villapos-sales');
+    if (savedHistory && savedHistory !== "") {
+        try {
+            salesHistory = JSON.parse(savedHistory);
+        } catch (e) {
+            console.error("Chyba při načítání historie prodejů:", e);
+            salesHistory = [];
+        }
+    } else {
+        salesHistory = [];
+    }
+}
+
+// Uložení historie prodejů do localStorage
+function saveSalesHistory() {
+    try {
+        // Omezíme velikost historie na posledních 100 prodejů, abychom nepřekročili localStorage limit
+        if (salesHistory.length > 100) {
+            salesHistory = salesHistory.slice(-100);
+        }
+        
+        localStorage.setItem('villapos-sales', JSON.stringify(salesHistory));
+    } catch (e) {
+        console.error("Chyba při ukládání historie prodejů:", e);
+    }
+}
+
+// Export skladových zásob do CSV
+function exportStockToCSV() {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Hlavička CSV
+    csvContent += "Lokace,Produkt,Kategorie,Cena,Měna,Skladem\n";
+    
+    // Data
+    Object.keys(inventory).forEach(location => {
+        const items = inventory[location].filter(item => item.name !== '');
+        
+        items.forEach((item, index) => {
+            const stockLevel = stockLevels[location][index] || 0;
+            
+            let locationName = '';
+            if (location === 'oh-yeah') locationName = 'Oh Yeah';
+            else if (location === 'amazing-pool') locationName = 'Amazing Pool';
+            else if (location === 'little-castle') locationName = 'Little Castle';
+            
+            let categoryName = '';
+            if (item.category === 'non-alcoholic') categoryName = 'Nealko';
+            else if (item.category === 'alcoholic') categoryName = 'Alkohol';
+            else if (item.category === 'beer') categoryName = 'Piva';
+            else if (item.category === 'relax') categoryName = 'Relax';
+            
+            csvContent += `"${locationName}","${item.name}","${categoryName}",${item.price},"${item.currency}",${stockLevel}\n`;
+        });
+    });
+    
+    // Vytvoření a stažení CSV souboru
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `villa-stock-${formatDate(new Date())}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Formátování data pro použití v názvech souborů
+function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Export historie prodejů do CSV
+function exportSalesToCSV() {
+    // Načtení historie
+    loadSalesHistory();
+    
+    if (salesHistory.length === 0) {
+        alert('Žádná historie prodejů k exportu.');
         return;
     }
     
-    // Vykreslení produktů
-    productsToRender.forEach(product => {
-        const row = document.createElement('tr');
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Hlavička CSV
+    csvContent += "Datum,Číslo účtenky,Lokace,Celkem CZK,Celkem EUR,Počet položek\n";
+    
+    // Data
+    salesHistory.forEach(sale => {
+        const date = new Date(sale.timestamp);
+        const formattedDate = date.toLocaleString('cs-CZ');
         
-        // Formátování ceny
-        const formattedPrice = new Intl.NumberFormat('cs-CZ', {
-            style: 'currency',
-            currency: 'CZK',
-            minimumFractionDigits: 0
-        }).format(product.price);
+        let locationName = '';
+        if (sale.location === 'oh-yeah') locationName = 'Oh Yeah';
+        else if (sale.location === 'amazing-pool') locationName = 'Amazing Pool';
+        else if (sale.location === 'little-castle') locationName = 'Little Castle';
         
-        row.innerHTML = `
-            <td>${product.id}</td>
-            <td>${product.name}</td>
-            <td>${formattedPrice}</td>
-            <td>${product.stock}</td>
-            <td class="actions">
-                <button class="edit-btn" data-id="${product.id}">Upravit</button>
-                <button class="delete-btn" data-id="${product.id}">Smazat</button>
-            </td>
+        csvContent += `"${formattedDate}","${sale.receiptNumber}","${locationName}",${sale.totalCZK.toFixed(2)},${sale.totalEUR.toFixed(2)},${sale.itemCount}\n`;
+    });
+    
+    // Vytvoření a stažení CSV souboru
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `villa-sales-${formatDate(new Date())}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Generování statistik prodejů
+function generateSalesStats() {
+    // Načtení historie
+    loadSalesHistory();
+    
+    const statsContainer = document.getElementById('sales-stats-container');
+    if (!statsContainer) return;
+    
+    if (salesHistory.length === 0) {
+        statsContainer.innerHTML = '<p>Žádná data pro zobrazení statistik.</p>';
+        return;
+    }
+    
+    // Základní statistiky
+    const totalSales = salesHistory.length;
+    const totalCZK = salesHistory.reduce((sum, sale) => sum + sale.totalCZK, 0);
+    const totalEUR = salesHistory.reduce((sum, sale) => sum + sale.totalEUR, 0);
+    const totalItems = salesHistory.reduce((sum, sale) => sum + sale.itemCount, 0);
+    
+    // Statistiky podle lokací
+    const locationStats = {};
+    salesHistory.forEach(sale => {
+        if (!locationStats[sale.location]) {
+            locationStats[sale.location] = {
+                count: 0,
+                totalCZK: 0,
+                totalEUR: 0,
+                itemCount: 0
+            };
+        }
+        
+        locationStats[sale.location].count++;
+        locationStats[sale.location].totalCZK += sale.totalCZK;
+        locationStats[sale.location].totalEUR += sale.totalEUR;
+        locationStats[sale.location].itemCount += sale.itemCount;
+    });
+    
+    // Zobrazení statistik
+    let statsHTML = `
+        <div class="stats-overview">
+            <h3>Celkové statistiky prodejů</h3>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">${totalSales}</div>
+                    <div class="stat-label">Celkem prodejů</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalCZK.toFixed(2)} CZK</div>
+                    <div class="stat-label">Celkové tržby (CZK)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalEUR.toFixed(2)} EUR</div>
+                    <div class="stat-label">Celkové tržby (EUR)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">${totalItems}</div>
+                    <div class="stat-label">Celkem prodaných položek</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats-by-location">
+            <h3>Statistiky podle lokací</h3>
+            <div class="location-stats-grid">
+    `;
+    
+    Object.keys(locationStats).forEach(location => {
+        let locationName = 'Neznámá lokace';
+        if (location === 'oh-yeah') locationName = 'Oh Yeah';
+        else if (location === 'amazing-pool') locationName = 'Amazing Pool';
+        else if (location === 'little-castle') locationName = 'Little Castle';
+        
+        statsHTML += `
+            <div class="location-stat-card">
+                <h4>${locationName}</h4>
+                <div class="location-stats">
+                    <div class="stat-item">
+                        <span class="stat-label">Počet prodejů:</span>
+                        <span class="stat-value">${locationStats[location].count}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tržby (CZK):</span>
+                        <span class="stat-value">${locationStats[location].totalCZK.toFixed(2)} CZK</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Tržby (EUR):</span>
+                        <span class="stat-value">${locationStats[location].totalEUR.toFixed(2)} EUR</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Prodané položky:</span>
+                        <span class="stat-value">${locationStats[location].itemCount}</span>
+                    </div>
+                </div>
+            </div>
         `;
+    });
+    
+    statsHTML += `
+            </div>
+        </div>
         
-        inventoryBody.appendChild(row);
-    });
+        <div class="sales-history">
+            <h3>Historie prodejů</h3>
+            <table class="sales-table">
+                <thead>
+                    <tr>
+                        <th>Datum</th>
+                        <th>Číslo účtenky</th>
+                        <th>Lokace</th>
+                        <th>Celkem CZK</th>
+                        <th>Celkem EUR</th>
+                        <th>Položek</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
     
-    // Přidání event listenerů pro tlačítka
-    document.querySelectorAll('.edit-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const id = button.getAttribute('data-id');
-            editProduct(parseInt(id));
-        });
-    });
-    
-    document.querySelectorAll('.delete-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            const id = button.getAttribute('data-id');
-            showDeleteConfirmation(parseInt(id));
-        });
-    });
-}
-
-/**
- * Filtruje produkty podle vyhledávacího řetězce
- */
-function filterProducts() {
-    const searchTerm = inventorySearchInput.value.toLowerCase().trim();
-    
-    if (searchTerm === '') {
-        renderProducts(); // Zobrazit všechny produkty
-        return;
-    }
-    
-    // Filtrování produktů
-    const filtered = products.filter(product => 
-        product.name.toLowerCase().includes(searchTerm) || 
-        product.id.toString().includes(searchTerm)
+    // Seřadíme historii od nejnovějších
+    const sortedHistory = [...salesHistory].sort((a, b) => 
+        new Date(b.timestamp) - new Date(a.timestamp)
     );
     
-    renderProducts(filtered);
-}
-
-/**
- * Zobrazí modální okno pro přidání produktu
- */
-function showAddProductModal() {
-    modalTitle.textContent = 'Přidat produkt';
-    currentProductId = null;
-    productForm.reset();
-    productModal.style.display = 'block';
-    productNameInput.focus();
-}
-
-/**
- * Zobrazí modální okno pro úpravu produktu
- * @param {number} id - ID produktu k úpravě
- */
-function editProduct(id) {
-    const product = products.find(p => p.id === id);
-    
-    if (!product) {
-        console.error(`Produkt s ID ${id} nenalezen`);
-        return;
-    }
-    
-    modalTitle.textContent = 'Upravit produkt';
-    currentProductId = id;
-    productIdInput.value = id;
-    productNameInput.value = product.name;
-    productPriceInput.value = product.price;
-    productStockInput.value = product.stock;
-    
-    productModal.style.display = 'block';
-    productNameInput.focus();
-}
-
-/**
- * Uloží produkt (přidání nebo úprava)
- * @param {Event} e - Událost odeslání formuláře
- */
-function saveProduct(e) {
-    e.preventDefault();
-    
-    // Získání hodnot z formuláře
-    const name = productNameInput.value.trim();
-    const price = parseFloat(productPriceInput.value);
-    const stock = parseInt(productStockInput.value);
-    
-    // Validace vstupů
-    if (!name) {
-        alert('Zadejte název produktu');
-        productNameInput.focus();
-        return;
-    }
-    
-    if (isNaN(price) || price < 0) {
-        alert('Zadejte platnou cenu');
-        productPriceInput.focus();
-        return;
-    }
-    
-    if (isNaN(stock) || stock < 0) {
-        alert('Zadejte platný počet kusů na skladě');
-        productStockInput.focus();
-        return;
-    }
-    
-    // Vytvoření objektu produktu
-    const productData = {
-        name,
-        price,
-        stock
-    };
-    
-    // Určení, zda jde o přidání nebo úpravu
-    let url = '/api/products';
-    let method = 'POST';
-    
-    if (currentProductId !== null) {
-        url = `/api/products/${currentProductId}`;
-        method = 'PUT';
-    }
-    
-    // Odeslání požadavku na server
-    fetch(url, {
-        method,
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(productData)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Nepodařilo se uložit produkt');
-        }
-        return response.json();
-    })
-    .then(() => {
-        closeProductModal();
-        loadProducts(); // Znovu načtení seznamu produktů
-    })
-    .catch(error => {
-        console.error('Chyba při ukládání produktu:', error);
-        alert(`Chyba: ${error.message}`);
-    });
-}
-
-/**
- * Zobrazí potvrzovací dialog pro smazání produktu
- * @param {number} id - ID produktu ke smazání
- */
-function showDeleteConfirmation(id) {
-    currentProductId = id;
-    confirmModal.style.display = 'block';
-}
-
-/**
- * Smaže produkt po potvrzení
- */
-function confirmDeleteProduct() {
-    if (currentProductId === null) {
-        closeConfirmModal();
-        return;
-    }
-    
-    fetch(`/api/products/${currentProductId}`, {
-        method: 'DELETE'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Nepodařilo se smazat produkt');
-        }
-        return response.json();
-    })
-    .then(() => {
-        closeConfirmModal();
-        loadProducts(); // Znovu načtení seznamu produktů
-    })
-    .catch(error => {
-        console.error('Chyba při mazání produktu:', error);
-        alert(`Chyba: ${error.message}`);
-        closeConfirmModal();
-    });
-}
-
-/**
- * Zavře modální okno pro úpravu/přidání produktu
- */
-function closeProductModal() {
-    productModal.style.display = 'none';
-    productForm.reset();
-}
-
-/**
- * Zavře potvrzovací dialog
- */
-function closeConfirmModal() {
-    confirmModal.style.display = 'none';
-    currentProductId = null;
-}
-
-/**
- * Zobrazí požadovanou sekci a skryje ostatní
- * @param {string} sectionId - ID sekce, která má být zobrazena
- */
-function showSection(sectionId) {
-    // Skrytí všech sekcí
-    document.querySelectorAll('main > section').forEach(section => {
-        section.classList.remove('active-section');
-        section.classList.add('hidden-section');
+    // Zobrazíme posledních 20 prodejů
+    sortedHistory.slice(0, 20).forEach(sale => {
+        const date = new Date(sale.timestamp);
+        const formattedDate = date.toLocaleString('cs-CZ');
+        
+        let locationName = 'Neznámá lokace';
+        if (sale.location === 'oh-yeah') locationName = 'Oh Yeah';
+        else if (sale.location === 'amazing-pool') locationName = 'Amazing Pool';
+        else if (sale.location === 'little-castle') locationName = 'Little Castle';
+        
+        statsHTML += `
+            <tr>
+                <td>${formattedDate}</td>
+                <td>${sale.receiptNumber}</td>
+                <td>${locationName}</td>
+                <td>${sale.totalCZK.toFixed(2)} CZK</td>
+                <td>${sale.totalEUR.toFixed(2)} EUR</td>
+                <td>${sale.itemCount}</td>
+            </tr>
+        `;
     });
     
-    // Zobrazení požadované sekce
-    const targetSection = document.getElementById(sectionId);
-    if (targetSection) {
-        targetSection.classList.remove('hidden-section');
-        targetSection.classList.add('active-section');
-    }
+    statsHTML += `
+                </tbody>
+            </table>
+        </div>
+    `;
     
-    // Aktualizace navigačních odkazů
-    document.querySelectorAll('nav a').forEach(link => {
-        link.classList.remove('active');
-    });
-    
-    // Aktivace odpovídajícího odkazu
-    const navLink = document.querySelector(`nav a[id="${sectionId.replace('-section', '-link')}"]`);
-    if (navLink) {
-        navLink.classList.add('active');
-    }
+    statsContainer.innerHTML = statsHTML;
 }
+
+// Inicializace modulu správy skladu
+function initInventoryManagement() {
+    initializeStock();
+    displayStockLevels();
+    
+    // Event listenery pro tlačítka
+    const resetStockBtn = document.getElementById('reset-stock-btn');
+    if (resetStockBtn) {
+        resetStockBtn.addEventListener('click', () => {
+            if (confirm('Opravdu chcete resetovat všechny skladové zásoby na výchozí hodnoty?')) {
+                resetStockToDefault();
+                displayStockLevels();
+            }
+        });
+    }
+    
+    const exportStockBtn = document.getElementById('export-stock-btn');
+    if (exportStockBtn) {
+        exportStockBtn.addEventListener('click', exportStockToCSV);
+    }
+    
+    const exportSalesBtn = document.getElementById('export-sales-btn');
+    if (exportSalesBtn) {
+        exportSalesBtn.addEventListener('click', exportSalesToCSV);
+    }
+    
+    // Generování statistik
+    generateSalesStats();
+}
+
+// Export funkcí pro použití v app.js
+window.inventoryManagement = {
+    initializeStock,
+    displayStockLevels,
+    updateStockOnCartAdd,
+    returnStockOnCartRemove,
+    checkStockAvailability,
+    recordSale,
+    generateSalesStats,
+    initInventoryManagement
+};
