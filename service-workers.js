@@ -9,8 +9,7 @@ const filesToCache = [
   '/app.js',
   '/inventory.js',
   '/manifest.json',
-  '/images/placeholder.jpg',
-  '/images/search-icon.svg',
+  // Obrázky
   '/images/cola.png',
   '/images/sprite.png',
   '/images/fanta.png',
@@ -22,22 +21,16 @@ const filesToCache = [
   '/images/mojito.png',
   '/images/prosecco.png',
   '/images/budvar.png',
-  '/images/keg.png',
-  '/images/pivo50.png',
+  '/images/30keg.png',
+  '/images/50keg.png',
   '/images/wellness.png',
   '/images/grill.png',
   '/images/Plyn.png',
-  '/images/icon-72x72.png',
-  '/images/icon-96x96.png',
-  '/images/icon-128x128.png',
-  '/images/icon-144x144.png',
-  '/images/icon-152x152.png',
-  '/images/icon-192x192.png',
-  '/images/icon-384x384.png',
-  '/images/icon-512x512.png',
-  '/images/maskable-icon.png',
-  '/images/favicon-16x16.png',
-  '/images/favicon-32x32.png'
+  // Ikony
+  '/images/icon-192.png',
+  '/images/icon-512.png',
+  // Fallback obrázek
+  '/images/placeholder.jpg'
 ];
 
 // Instalace Service Workeru
@@ -84,19 +77,14 @@ self.addEventListener('activate', event => {
 
 // Zachycení požadavků fetch
 self.addEventListener('fetch', event => {
-  console.log('Service Worker: Fetch', event.request.url);
-  
   // Strategie Cache-First: nejprve zkusíme z cache, pak teprve ze sítě
   event.respondWith(
     caches.match(event.request)
       .then(response => {
         // Vrácení souboru z cache, pokud existuje
         if (response) {
-          console.log('Service Worker: Nalezeno v cache', event.request.url);
           return response;
         }
-        
-        console.log('Service Worker: Stahuji ze sítě', event.request.url);
         
         // Pokud není v cache, stáhneme ze sítě
         return fetch(event.request)
@@ -113,7 +101,6 @@ self.addEventListener('fetch', event => {
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
-                console.log('Service Worker: Přidáno do cache', event.request.url);
               });
             
             return response;
@@ -128,11 +115,4 @@ self.addEventListener('fetch', event => {
           });
       })
   );
-});
-
-// Zpracování zpráv od klientů (např. pro aktualizaci cache)
-self.addEventListener('message', event => {
-  if (event.data.action === 'skipWaiting') {
-    self.skipWaiting();
-  }
 });
