@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2c3e50">
+    <meta name="description" content="Villa POS - systém pro správu prodejů, skladu a statistik">
     <title>Villa POS</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
@@ -87,6 +88,7 @@
         <div class="inventory-actions">
             <button id="reset-stock-btn" class="action-btn">Resetovat sklad</button>
             <button id="export-stock-btn" class="action-btn">Export skladu (CSV)</button>
+            <button id="add-item-btn" class="action-btn">Přidat položku</button>
         </div>
 
         <div class="inventory-filter">
@@ -134,6 +136,13 @@
         <div class="stats-actions">
             <button id="refresh-stats-btn" class="action-btn">Aktualizovat statistiky</button>
             <button id="export-sales-btn" class="action-btn">Export prodejů (CSV)</button>
+            <div class="date-filter">
+                <label for="date-from">Od:</label>
+                <input type="date" id="date-from">
+                <label for="date-to">Do:</label>
+                <input type="date" id="date-to">
+                <button id="apply-date-filter" class="action-btn">Filtrovat</button>
+            </div>
         </div>
 
         <div class="stats-container">
@@ -179,6 +188,15 @@
                 
                 <div class="setting-group">
                     <button id="clear-data" class="setting-btn danger">Vymazat všechna data</button>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>Měna</h2>
+                
+                <div class="setting-group">
+                    <label for="exchange-rate">Kurz EUR/CZK:</label>
+                    <input type="number" id="exchange-rate" min="1" step="0.01" value="25.50">
                 </div>
             </div>
             
@@ -236,7 +254,7 @@
         </div>
     </div>
 
-    <!-- Modal pro přidání/úpravu položky skladu (pro budoucí implementaci) -->
+    <!-- Modal pro přidání/úpravu položky skladu -->
     <div id="item-modal" class="modal">
         <div class="modal-content">
             <span class="close">&times;</span>
@@ -283,6 +301,11 @@
                     </select>
                 </div>
                 
+                <div class="form-group">
+                    <label for="item-stock">Počáteční stav skladu:</label>
+                    <input type="number" id="item-stock" min="0" value="50">
+                </div>
+                
                 <div class="form-group checkbox-group">
                     <label for="item-custom-price">
                         <input type="checkbox" id="item-custom-price">
@@ -318,8 +341,29 @@
             });
         }
         
-        // Inicializace správy skladu po načtení stránky
+        // Parametry z URL pro otevření konkrétní stránky aplikace
         window.addEventListener('load', () => {
+            // Zkontrolujeme URL parametry pro přímý přístup ke stránkám
+            const urlParams = new URLSearchParams(window.location.search);
+            const page = urlParams.get('page');
+            
+            if (page) {
+                switch (page) {
+                    case 'inventory':
+                        switchPage('inventory');
+                        break;
+                    case 'stats':
+                        switchPage('stats');
+                        break;
+                    case 'settings':
+                        switchPage('settings');
+                        break;
+                    default:
+                        switchPage('pos');
+                }
+            }
+            
+            // Inicializace správy skladu
             if (window.inventoryManagement) {
                 window.inventoryManagement.initInventoryManagement();
             }
@@ -353,6 +397,36 @@
                     window.inventoryManagement.generateSalesStats();
                 });
             }
+            
+            // Filtrování podle data
+            const applyDateFilterBtn = document.getElementById('apply-date-filter');
+            if (applyDateFilterBtn && window.inventoryManagement) {
+                applyDateFilterBtn.addEventListener('click', () => {
+                    const dateFrom = document.getElementById('date-from').value;
+                    const dateTo = document.getElementById('date-to').value;
+                    window.inventoryManagement.generateSalesStats(dateFrom, dateTo);
+                });
+            }
+            
+            // Nastavení aktuálního data pro filtr statistik
+            const setDefaultDates = () => {
+                const today = new Date();
+                const lastMonth = new Date();
+                lastMonth.setMonth(today.getMonth() - 1);
+                
+                const dateFromInput = document.getElementById('date-from');
+                const dateToInput = document.getElementById('date-to');
+                
+                if (dateFromInput) {
+                    dateFromInput.valueAsDate = lastMonth;
+                }
+                
+                if (dateToInput) {
+                    dateToInput.valueAsDate = today;
+                }
+            };
+            
+            setDefaultDates();
         });
     </script>
 </body>
