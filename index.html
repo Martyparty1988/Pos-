@@ -2,121 +2,358 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#2c3e50">
     <title>Villa POS</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <link href="styles.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="images/icon-192x192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="images/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
 </head>
-<body>
-    <div class="app-container">
-        <nav class="villa-nav">
-            <div class="tab-scroll">
-                <button class="villa-btn oh-yeah" onclick="selectVilla('oh-yeah')">
-                    <i class="fas fa-house"></i>
-                    <span>OH YEAH</span>
-                </button>
-                <button class="villa-btn amazing-pool" onclick="selectVilla('amazing-pool')">
-                    <i class="fas fa-water-ladder"></i>
-                    <span>Amazing Pool</span>
-                </button>
-                <button class="villa-btn little-castle" onclick="selectVilla('little-castle')">
-                    <i class="fas fa-castle"></i>
-                    <span>Little Castle</span>
-                </button>
-            </div>
-        </nav>
+<body class="light-theme">
+    <!-- Horní navigační panel pro sekce aplikace -->
+    <nav class="main-nav">
+        <button id="nav-pos" class="nav-item active">POS</button>
+        <button id="nav-inventory" class="nav-item">Sklad</button>
+        <button id="nav-stats" class="nav-item">Statistiky</button>
+        <button id="nav-settings" class="nav-item">Nastavení</button>
+    </nav>
 
-        <nav class="category-nav">
-            <button class="category-btn" onclick="renderInventory('all')">Vše</button>
-            <button class="category-btn" onclick="renderInventory('non-alcoholic')">Nealko nápoje</button>
-            <button class="category-btn" onclick="renderInventory('alcoholic')">Alkoholické nápoje</button>
-            <button class="category-btn" onclick="renderInventory('beer')">Piva</button>
-            <button class="category-btn" onclick="renderInventory('relax')">Relax</button>
-        </nav>
+    <!-- POS stránka -->
+    <div id="pos-page" class="page">
+        <header>
+            <h1>Villa POS</h1>
+            <div id="status-bar">
+                <span id="connection-status" class="online">Online</span>
+                <span id="current-date"></span>
+            </div>
+        </header>
 
-        <main class="main-content">
-            <div class="filters">
-                <!-- Hidden original filters -->
-            </div>
-
-            <div class="stats-bar">
-                <div class="stat">
-                    <div class="stat-value" id="totalItems">0</div>
-                    <div class="stat-label">Položky</div>
-                </div>
-                <div class="stat">
-                    <div class="stat-value" id="totalAmount">0 Kč</div>
-                    <div class="stat-label">Celkem</div>
-                </div>
-            </div>
-
-            <div class="inventory" id="inventory"></div>
-        </main>
-
-        <div id="quantitySelector" class="quantity-selector">
-            <div class="quantity-header">
-                <div id="selectedItemName" class="item-name"></div>
-                <div id="selectedItemPrice" class="item-price"></div>
-            </div>
-            <div class="quantity-controls">
-                <input type="number" id="quantityDisplay" class="quantity-display" min="1" value="1" onchange="adjustQuantity(this.value)">
-            </div>
-            <div class="quantity-actions">
-                <button class="cancel-btn" onclick="hideQuantitySelector()">Zrušit</button>
-                <button class="confirm-btn" onclick="confirmQuantity()">Přidat do košíku</button>
-            </div>
+        <div class="location-selector">
+            <select id="location-select">
+                <option value="oh-yeah">Oh Yeah</option>
+                <option value="amazing-pool">Amazing Pool</option>
+                <option value="little-castle">Little Castle</option>
+            </select>
         </div>
 
-        <footer class="cart-footer">
-            <button class="cart-toggle" onclick="toggleCart()">
-                <i class="fas fa-shopping-cart"></i>
-                <span id="cartCount">0</span>
+        <div class="search-container">
+            <input type="text" id="search-input" placeholder="Vyhledat produkt...">
+            <button id="search-button">
+                <img src="images/search-icon.svg" alt="Hledat">
             </button>
-        </footer>
+        </div>
 
-        <div id="cartPanel" class="cart-panel">
-            <div class="cart-header">
-                <h2>Košík</h2>
-                <button class="close-btn" onclick="toggleCart()">
-                    <i class="fas fa-times"></i>
-                </button>
+        <nav>
+            <button class="category active" data-category="all">Vše</button>
+            <button class="category" data-category="non-alcoholic">Nealko</button>
+            <button class="category" data-category="alcoholic">Alkohol</button>
+            <button class="category" data-category="beer">Piva</button>
+            <button class="category" data-category="relax">Relax</button>
+        </nav>
+
+        <main>
+            <div class="container" id="product-list">
+                <!-- Produkty budou načteny dynamicky z JavaScriptu -->
+                <div class="loading">Načítání produktů...</div>
             </div>
-            <div class="cart-items" id="cartItems"></div>
-            <div class="cart-controls">
-                <div class="control-group">
-                    <input type="number" id="guests" placeholder="Počet hostů" min="1">
-                    <input type="number" id="nights" placeholder="Počet nocí" min="1">
+
+            <div class="cart-container">
+                <h2>Košík</h2>
+                <div id="cart-items">
+                    <!-- Položky košíku budou přidány dynamicky -->
+                    <div class="empty-cart">Košík je prázdný</div>
                 </div>
-                <div class="control-group">
-                    <select id="currency" onchange="updateStats()">
+                <div class="cart-summary">
+                    <p>Počet položek: <span id="item-count">0</span></p>
+                    <p>Celkem CZK: <span id="total-price-czk">0 CZK</span></p>
+                    <p>Celkem EUR: <span id="total-price-eur">0 EUR</span></p>
+                </div>
+                <div class="cart-actions">
+                    <button id="clear-cart">Vymazat</button>
+                    <button id="checkout">Dokončit objednávku</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Stránka správy skladu -->
+    <div id="inventory-page" class="page hidden">
+        <header>
+            <h1>Správa skladu</h1>
+        </header>
+
+        <div class="inventory-actions">
+            <button id="reset-stock-btn" class="action-btn">Resetovat sklad</button>
+            <button id="export-stock-btn" class="action-btn">Export skladu (CSV)</button>
+        </div>
+
+        <div class="inventory-filter">
+            <input type="text" id="inventory-search" placeholder="Vyhledat položku...">
+            <select id="inventory-location-filter">
+                <option value="all">Všechny lokace</option>
+                <option value="oh-yeah">Oh Yeah</option>
+                <option value="amazing-pool">Amazing Pool</option>
+                <option value="little-castle">Little Castle</option>
+            </select>
+            <select id="inventory-category-filter">
+                <option value="all">Všechny kategorie</option>
+                <option value="non-alcoholic">Nealko</option>
+                <option value="alcoholic">Alkohol</option>
+                <option value="beer">Piva</option>
+                <option value="relax">Relax</option>
+            </select>
+        </div>
+
+        <div class="inventory-container">
+            <table class="inventory-table">
+                <thead>
+                    <tr>
+                        <th>Lokace</th>
+                        <th>Produkt</th>
+                        <th>Kategorie</th>
+                        <th>Cena</th>
+                        <th>Skladem</th>
+                        <th>Akce</th>
+                    </tr>
+                </thead>
+                <tbody id="stock-table-body">
+                    <!-- Položky skladu budou přidány dynamicky -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Stránka statistik -->
+    <div id="stats-page" class="page hidden">
+        <header>
+            <h1>Statistiky prodejů</h1>
+        </header>
+
+        <div class="stats-actions">
+            <button id="refresh-stats-btn" class="action-btn">Aktualizovat statistiky</button>
+            <button id="export-sales-btn" class="action-btn">Export prodejů (CSV)</button>
+        </div>
+
+        <div class="stats-container">
+            <div id="sales-stats-container">
+                <!-- Statistiky budou přidány dynamicky -->
+                <div class="loading">Načítání statistik...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stránka nastavení -->
+    <div id="settings-page" class="page hidden">
+        <header>
+            <h1>Nastavení aplikace</h1>
+        </header>
+
+        <div class="settings-container">
+            <div class="settings-section">
+                <h2>Vzhled</h2>
+                
+                <div class="setting-group">
+                    <label for="theme-select">Téma:</label>
+                    <select id="theme-select">
+                        <option value="light-theme">Světlé</option>
+                        <option value="dark-theme">Tmavé</option>
+                    </select>
+                </div>
+                
+                <div class="setting-group">
+                    <label for="font-size-slider">Velikost písma: <span id="font-size-value">16px</span></label>
+                    <input type="range" id="font-size-slider" min="12" max="24" value="16">
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>Data</h2>
+                
+                <div class="setting-group">
+                    <button id="export-data" class="setting-btn">Exportovat data (JSON)</button>
+                    <button id="import-data" class="setting-btn">Importovat data</button>
+                    <input type="file" id="import-file" accept=".json" class="hidden">
+                </div>
+                
+                <div class="setting-group">
+                    <button id="clear-data" class="setting-btn danger">Vymazat všechna data</button>
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <h2>O aplikaci</h2>
+                
+                <div class="about-info">
+                    <p>Villa POS v1.0</p>
+                    <p>Vytvořeno pro správu prodejů ve vilách</p>
+                    <p>&copy; 2025 Villa POS</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 Villa POS - Vytvořeno pro potřeby provozu</p>
+    </footer>
+
+    <!-- Modal pro vlastní cenu -->
+    <div id="custom-price-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Zadat vlastní cenu</h2>
+            <div class="custom-price-input">
+                <label for="custom-price">Cena:</label>
+                <input type="number" id="custom-price" min="0" step="1">
+                <select id="custom-currency">
+                    <option value="EUR">EUR</option>
+                    <option value="CZK">CZK</option>
+                </select>
+            </div>
+            <button id="confirm-custom-price">Potvrdit</button>
+        </div>
+    </div>
+
+    <!-- Modal pro dokončení objednávky -->
+    <div id="checkout-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Dokončit objednávku</h2>
+            <div class="checkout-summary">
+                <h3>Souhrn objednávky</h3>
+                <div id="checkout-items">
+                    <!-- Dynamicky přidané položky -->
+                </div>
+                <p class="checkout-total">Celkem CZK: <span id="checkout-total-czk">0 CZK</span></p>
+                <p class="checkout-total">Celkem EUR: <span id="checkout-total-eur">0 EUR</span></p>
+            </div>
+            <div class="checkout-actions">
+                <button id="print-receipt">Vytisknout účtenku</button>
+                <button id="export-pdf">Exportovat do PDF</button>
+                <button id="complete-order">Dokončit a zaplatit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro přidání/úpravu položky skladu (pro budoucí implementaci) -->
+    <div id="item-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="item-modal-title">Přidat novou položku</h2>
+            <form id="item-form">
+                <input type="hidden" id="item-index" value="">
+                <input type="hidden" id="item-mode" value="add">
+                
+                <div class="form-group">
+                    <label for="item-name">Název:</label>
+                    <input type="text" id="item-name" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-price">Cena:</label>
+                    <input type="number" id="item-price" min="0" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-currency">Měna:</label>
+                    <select id="item-currency">
                         <option value="CZK">CZK</option>
                         <option value="EUR">EUR</option>
                     </select>
-                    <button class="exchange-rate-btn" onclick="updateExchangeRate()">
-                        <i class="fas fa-sync-alt"></i>
-                    </button>
-                    <select id="paymentMethod">
-                        <option value="cash">Hotově</option>
-                        <option value="card">Kartou</option>
-                        <option value="unpaid">Neplaceno</option>
+                </div>
+                
+                <div class="form-group">
+                    <label for="item-category">Kategorie:</label>
+                    <select id="item-category">
+                        <option value="non-alcoholic">Nealko</option>
+                        <option value="alcoholic">Alkohol</option>
+                        <option value="beer">Piva</option>
+                        <option value="relax">Relax</option>
                     </select>
                 </div>
-                <label class="discount-toggle">
-                    <input type="checkbox" id="discount" onchange="updateStats()">
-                    <span>10% sleva</span>
-                </label>
-                <button class="generate-btn" onclick="generateInvoice()">
-                    Generovat fakturu
-                </button>
-            </div>
+                
+                <div class="form-group">
+                    <label for="item-location">Lokace:</label>
+                    <select id="item-location">
+                        <option value="all">Všechny lokace</option>
+                        <option value="oh-yeah">Oh Yeah</option>
+                        <option value="amazing-pool">Amazing Pool</option>
+                        <option value="little-castle">Little Castle</option>
+                    </select>
+                </div>
+                
+                <div class="form-group checkbox-group">
+                    <label for="item-custom-price">
+                        <input type="checkbox" id="item-custom-price">
+                        Vlastní cena při prodeji
+                    </label>
+                </div>
+                
+                <button type="button" id="save-item-btn" class="modal-btn">Uložit</button>
+            </form>
         </div>
     </div>
 
-    <div class="modal" id="invoiceModal">
-        <div class="modal-content" id="invoiceContent"></div>
+    <!-- Offline notifikace -->
+    <div id="offline-notification" class="notification hidden">
+        <p>Jste offline. Některé funkce nemusí být dostupné.</p>
     </div>
 
+    <!-- Skripty -->
     <script src="inventory.js"></script>
+    <script src="inventory-management.js"></script>
     <script src="app.js"></script>
+    <script>
+        // Registrace service workeru pro PWA funkcionalitu
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(registration => {
+                        console.log('Service Worker registrován úspěšně:', registration);
+                    })
+                    .catch(error => {
+                        console.log('Registrace Service Workeru se nezdařila:', error);
+                    });
+            });
+        }
+        
+        // Inicializace správy skladu po načtení stránky
+        window.addEventListener('load', () => {
+            if (window.inventoryManagement) {
+                window.inventoryManagement.initInventoryManagement();
+            }
+            
+            // Navigace mezi stránkami
+            document.getElementById('nav-pos').addEventListener('click', () => switchPage('pos'));
+            document.getElementById('nav-inventory').addEventListener('click', () => switchPage('inventory'));
+            document.getElementById('nav-stats').addEventListener('click', () => switchPage('stats'));
+            document.getElementById('nav-settings').addEventListener('click', () => switchPage('settings'));
+            
+            // Funkce pro přepínání stránek
+            function switchPage(page) {
+                document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                
+                document.getElementById(`${page}-page`).classList.remove('hidden');
+                document.getElementById(`nav-${page}`).classList.add('active');
+                
+                // Aktualizace obsahu stránky
+                if (page === 'inventory' && window.inventoryManagement) {
+                    window.inventoryManagement.displayStockLevels();
+                } else if (page === 'stats' && window.inventoryManagement) {
+                    window.inventoryManagement.generateSalesStats();
+                }
+            }
+            
+            // Aktualizace statistik
+            const refreshStatsBtn = document.getElementById('refresh-stats-btn');
+            if (refreshStatsBtn && window.inventoryManagement) {
+                refreshStatsBtn.addEventListener('click', () => {
+                    window.inventoryManagement.generateSalesStats();
+                });
+            }
+        });
+    </script>
 </body>
 </html>
