@@ -1,0 +1,390 @@
+/* Základní reset a proměnné */
+:root {
+    /* Základní barvy */
+    --primary: #3498db;
+    --primary-dark: #2980b9;
+    --secondary: #e67e22;
+    --secondary-dark: #d35400;
+    --accent: #9b59b6;
+    --success: #2ecc71;
+    --warning: #f1c40f;
+    --danger: #e74c3c;
+    
+    /* Textové barvy */
+    --text-dark: #2c3e50;
+    --text-light: #ecf0f1;
+    --text-muted: #95a5a6;
+    
+    /* Pozadí */
+    --bg-light: #ffffff;
+    --bg-gray: #f5f7fa;
+    --bg-dark: #34495e;
+    
+    /* Rozměry a mezery */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    
+    /* Zaoblení */
+    --border-radius-sm: 4px;
+    --border-radius-md: 8px;
+    --border-radius-lg: 12px;
+    
+    /* Stíny */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    --shadow-md: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+    --shadow-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    
+    /* Přechody */
+    --transition-fast: all 0.2s ease;
+    --transition-normal: all 0.3s ease;
+    --transition-slow: all 0.5s ease;
+}
+
+/* Tmavý režim */
+body.dark-mode {
+    --primary: #2980b9;
+    --primary-dark: #1c628f;
+    --secondary: #d35400;
+    --secondary-dark: #a04000;
+    --accent: #8e44ad;
+    
+    --text-dark: #ecf0f1;
+    --text-light: #34495e;
+    --text-muted: #7f8c8d;
+    
+    --bg-light: #2c3e50;
+    --bg-gray: #34495e;
+    --bg-dark: #1a252f;
+}
+
+/* Základní reset a typografie */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--text-dark);
+    background-color: var(--bg-gray);
+    height: 100%;
+    overflow: hidden;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+    margin-bottom: var(--spacing-md);
+}
+
+button, input, select, textarea {
+    font-family: inherit;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+/* Hlavní rozložení */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    background-color: var(--bg-light);
+    box-shadow: var(--shadow-lg);
+}
+
+.main-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md) var(--spacing-lg);
+    background-color: var(--primary);
+    color: var(--text-light);
+}
+
+.logo h1 {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: var(--spacing-md);
+}
+
+.nav-tab {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    background: transparent;
+    color: var(--text-light);
+    opacity: 0.8;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    border-radius: var(--border-radius-sm);
+}
+
+.nav-tab:hover {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-tab.active {
+    opacity: 1;
+    background-color: rgba(255, 255, 255, 0.2);
+    font-weight: 600;
+}
+
+.location-selector select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border-radius: var(--border-radius-sm);
+    border: none;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: var(--text-light);
+    cursor: pointer;
+}
+
+.main-content {
+    flex: 1;
+    overflow-y: auto;
+    position: relative;
+}
+
+.content-section {
+    display: none;
+    height: 100%;
+    padding: var(--spacing-md);
+}
+
+.content-section.active {
+    display: block;
+}
+
+/* Obecné styly pro tlačítka a vstupy */
+button {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    background-color: var(--primary);
+    color: white;
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+button:hover {
+    background-color: var(--primary-dark);
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+input, select {
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius-sm);
+    background-color: white;
+    transition: var(--transition-fast);
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+}
+
+/* Speciální tlačítka */
+.danger-btn {
+    background-color: var(--danger);
+}
+
+.danger-btn:hover {
+    background-color: #c0392b;
+}
+
+.success-btn {
+    background-color: var(--success);
+}
+
+.success-btn:hover {
+    background-color: #27ae60;
+}
+
+/* Přepínače */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: var(--transition-fast);
+    border-radius: 24px;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: var(--transition-fast);
+    border-radius: 50%;
+}
+
+input:checked + .slider {
+    background-color: var(--primary);
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px var(--primary);
+}
+
+input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+/* Modální okna */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    position: relative;
+    background-color: var(--bg-light);
+    margin: 10% auto;
+    padding: var(--spacing-lg);
+    border-radius: var(--border-radius-md);
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+    animation: modalAppear 0.3s ease;
+}
+
+@keyframes modalAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.close {
+    position: absolute;
+    top: var(--spacing-md);
+    right: var(--spacing-md);
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: var(--danger);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--spacing-md);
+    margin-top: var(--spacing-lg);
+}
+
+.modal-btn {
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* Vstupní skupiny v modálech */
+.input-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+}
+
+.input-group input,
+.input-group select {
+    width: 100%;
+    margin-bottom: var(--spacing-sm);
+}
+
+/* Responzivní design */
+@media (max-width: 768px) {
+    .main-nav {
+        flex-direction: column;
+        padding: var(--spacing-sm);
+    }
+    
+    .nav-tabs {
+        margin: var(--spacing-sm) 0;
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .location-selector {
+        width: 100%;
+        margin-top: var(--spacing-sm);
+    }
+    
+    .location-selector select {
+        width: 100%;
+    }
+    
+    .modal-content {
+        width: 90%;
+        margin: 15% auto;
+        padding: var(--spacing-md);
+    }
+}
+
+/* Pro menší mobilní zařízení */
+@media (max-width: 480px) {
+    html, body {
+        font-size: 14px;
+    }
+    
+    .nav-tab {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.9rem;
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-btn {
+        width: 100%;
+    }
+}
