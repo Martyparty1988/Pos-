@@ -14,29 +14,77 @@
     }
     
     .product-panel {
-        order: 2;
-    }
-    
-    .cart-panel {
         order: 1;
-        max-height: 300px;
+        margin-bottom: 60px; /* Prostor pro tlačítko košíku */
     }
-}
-
-@media (max-width: 480px) {
+    
     .cart-panel {
-        max-height: 250px;
+        order: 2;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        max-height: 70vh; /* Maximálně 70% výšky obrazovky */
+        transform: translateY(100%); /* Skrytý dolů */
+        transition: transform 0.3s ease;
+        margin: 0 var(--spacing-xs);
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
     }
     
-    .category-filters {
-        overflow-x: auto;
-        white-space: nowrap;
-        padding: var(--spacing-xs);
+    .cart-panel.show {
+        transform: translateY(0); /* Zobrazený */
     }
     
-    .category-btn {
-        padding: var(--spacing-xs) var(--spacing-sm);
-        font-size: 0.9rem;
+    /* Tlačítko pro zobrazení košíku na mobilních zařízeních */
+    .cart-toggle-btn {
+        display: flex;
+        position: fixed;
+        bottom: 70px;
+        right: 20px;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background-color: var(--primary);
+        color: white;
+        align-items: center;
+        justify-content: center;
+        box-shadow: var(--shadow-md);
+        z-index: 51;
+        font-size: 1.5rem;
+    }
+    
+    .cart-toggle-btn .cart-count {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background-color: var(--danger);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: bold;
+    }
+    
+    /* Overlay pro kliknutí mimo košík k jeho zavření */
+    .cart-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 49;
+    }
+    
+    .cart-overlay.show {
+        display: block;
     }
 }
 
