@@ -47,6 +47,208 @@ const UI = (() => {
         cartCount: document.querySelector('.cart-count'),
     };
 
+// Přidejte tyto proměnné k existujícím proměnným v modulu UI
+let selectedPaymentMethod = 'cash'; // Výchozí platební metoda (cash, card, unpaid)
+
+// Přidejte tyto reference k DOM elementům
+// (přidejte je do objektu 'elements')
+cartPanel: document.querySelector('.cart-panel'),
+cartToggleBtn: document.getElementById('cart-toggle-btn'),
+cartOverlay: document.getElementById('cart-overlay'),
+cartCount: document.querySelector('.cart-count'),
+// Nové elementy pro platební metody
+paymentMethodsContainer: document.getElementById('payment-methods'),
+paymentMethodBtns: document.querySelectorAll('.payment-method'),
+
+// Upravte funkci renderProducts pro zobrazení pouze obrázků bez textu
+const renderProducts = (searchQuery = '') => {
+    let products;
+    
+    if (searchQuery) {
+        products = Inventory.searchProducts(searchQuery);
+    } else {
+        products = Inventory.getProductsByCategory(currentCategory);
+    }
+    
+    elements.productContainer.innerHTML = '';
+    
+    if (products.length === 0) {
+        elements.productContainer.innerHTML = '<div class="no-products">Žádné produkty nenalezeny</div>';
+        return;
+    }
+    
+    const settings = Storage.loadSettings();
+    
+    products.forEach(product => {
+        const productCard = document.createElement('div');
+        productCard.className = 'product-card';
+        
+        // Přidáme data atributy pro tooltip
+        const formattedPrice = Inventory.formatPrice(
+            currentDisplayCurrency === product.currency 
+                ? product.price 
+                : Inventory.convertCurrency(product.price, product.currency, currentDisplayCurrency, settings.exchangeRate),
+            currentDisplayCurrency
+        );
+        
+        productCard.dataset.name = product.name;
+        productCard.dataset.price = formattedPrice;
+        
+        if (product.special) {
+            productCard.dataset.special = product.special;
+        }
+        
+        // Pouze obrázek v kartě produktu
+        const imgSrc = `${product.image}`;
+        productCard.innerHTML = `<img src="${imgSrc}" alt="${product.name}" onerror="this.src='images/placeholder.png'">`;
+        
+        productCard.addEventListener('click', () => {
+            if (product.special) {
+                openProductModal(product);
+            } else {
+                productCard.classList.add('adding');
+                setTimeout(() => {
+                    productCard.classList.remove('adding');
+                }, 500);
+                
+                Cart.addItem(product);
+                renderCart();
+                updateCartCount();
+                
+                if (window.innerWidth <= 768) {
+                    showCart();
+                }
+            }
+        });
+        
+        elements.productContainer.appendChild(productCard);
+    });
+};
+
+// Funkce pro vybrání platební metody
+const selectPaymentMethod = (method) => {
+    selectedPaymentMethod = method;
+    
+    // Aktualizace vizuálního stavu tlačítek
+    if (elements.paymentMethodBtns) {
+        elements.paymentMethodBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if (btn.dataset.method === method) {
+                btn.classList.add('active');
+            }
+        });
+    }
+};
+
+// Přidejte eventListenery pro platební metody
+const setupPaymentMethodListeners = () => {
+    if (elements.paymentMethodBtns) {
+        elements.paymentMethodBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                selectPaymentMethod(btn.dataset.method);
+            });
+        });
+    }
+};
+
+// Upravte funkci generateReceiptHtml, aby zahrnovala platební metodu
+const generateReceiptHtml = (data) => {
+    const { items, location, totalCZK, totalEUR, timestamp, exchangeRate } = data;
+    
+    // Získáme informace o lokaci včetně barvy
+    const locationInfo = Inventory.getLocationById(location);
+    const locationName = locationInfo ? locationInfo.name : location;
+    
+    const dateOptions = { 
+        day: '2-digit', month: '2-digit', year: 'numeric',
+        hour: '2-digit', minute: '2-digit'
+    };
+    const formattedDate = new Date(timestamp).toLocaleDateString('cs-CZ', dateOptions);
+    
+    let itemsHtml = '';
+    items.forEach(item => {
+        let specialInfo = '';
+        
+        if (item.customData) {
+            if (item.product.special === 'citytax') {
+                specialInfo = ` (${item.customData.persons} osob × ${item.customData.nights} nocí)`;
+            }
+        }
+        
+        const formattedPrice = Inventory.formatPrice(item.price, item.currency);
+        const totalItemPrice = Inventory.formatPrice(item.price * item.quantity, item.currency);
+        
+        itemsHtml += `
+            <tr>
+                <td>${item.product.name}${specialInfo}</td>
+                <td>${item.quantity}×</td>
+                <td>${formattedPrice}</td>
+                <td>${totalItemPrice}</td>
+            </tr>
+        `;
+    });
+    
+    // Přidáme informaci o platební metodě
+    let paymentMethodText = '';
+    switch(selectedPaymentMethod) {
+        case 'cash':
+            paymentMethodText = 'Platba: Hotově';
+            break;
+        case 'card':
+            paymentMethodText = 'Platba: Kartou';
+            break;
+        case 'unpaid':
+            paymentMethodText = 'Platba: Neplacené';
+            break;
+        default:
+            paymentMethodText = 'Platba: Hotově';
+    }
+    
+    return `
+        <div class="receipt">
+            <div class="receipt-header">
+                <h3>Villa POS Systém</h3>
+                <p>Lokace: ${locationName}</p>
+                <p>Datum: ${formattedDate}</p>
+            </div>
+            
+            <div class="receipt-items">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Položka</th>
+                            <th>Množství</th>
+                            <th>Cena/ks</th>
+                            <th>Celkem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${itemsHtml}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="receipt-summary">
+                <p><strong>Celkem CZK:</strong> ${totalCZK.toFixed(0)} Kč</p>
+                <p><strong>Celkem EUR:</strong> ${totalEUR.toFixed(2)} €</p>
+                <p>Kurz: 1 € = ${exchangeRate} Kč</p>
+                <p class="payment-method-info">${paymentMethodText}</p>
+            </div>
+            
+            <div class="receipt-footer">
+                <p>Děkujeme za Váš nákup!</p>
+            </div>
+        </div>
+    `;
+};
+
+// Upravte funkci setupEventListeners, aby inicializovala platební metody
+// Přidejte toto do funkce setupEventListeners
+setupPaymentMethodListeners();
+
+// Přidejte tuto funkci do init()
+selectPaymentMethod('cash'); // Nastavení výchozí platební metody
+
     // Pomocné proměnné
     let currentCategory = 'all';
     let currentDisplayCurrency = 'czk';
