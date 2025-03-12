@@ -25,16 +25,48 @@
         left: 0;
         right: 0;
         z-index: 50;
-        max-height: 70vh; /* Maximálně 70% výšky obrazovky */
+        max-height: 85vh; /* Zvýšeno z 70% na 85% výšky obrazovky */
+        overflow-y: auto; /* Zajistí scrollování obsahu košíku */
         transform: translateY(100%); /* Skrytý dolů */
         transition: transform 0.3s ease;
-        margin: 0 var(--spacing-xs);
+        margin: 0;
+        padding-bottom: 80px; /* Prostor pro spodní navigaci */
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
+        box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.2);
     }
     
     .cart-panel.show {
         transform: translateY(0); /* Zobrazený */
+    }
+    
+    /* Zajistíme, že tlačítko Vytvořit účtenku bude vždy viditelné */
+    .cart-summary {
+        position: sticky;
+        bottom: 0;
+        background-color: var(--bg-gray);
+        padding-bottom: 15px;
+        border-top: 1px solid #ddd;
+        z-index: 5;
+    }
+    
+    /* Přidáme viditelné tlačítko pro zavření košíku */
+    .cart-header {
+        position: sticky;
+        top: 0;
+        z-index: 6;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .cart-header .close-cart {
+        background: none;
+        color: white;
+        font-size: 1.5rem;
+        padding: 5px;
+        cursor: pointer;
     }
     
     /* Tlačítko pro zobrazení košíku na mobilních zařízeních */
@@ -85,6 +117,19 @@
     
     .cart-overlay.show {
         display: block;
+    }
+}
+
+@media (max-width: 480px) {
+    .category-filters {
+        overflow-x: auto;
+        white-space: nowrap;
+        padding: var(--spacing-xs);
+    }
+    
+    .category-btn {
+        padding: var(--spacing-xs) var(--spacing-sm);
+        font-size: 0.9rem;
     }
 }
 
