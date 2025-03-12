@@ -1,153 +1,248 @@
-/**
- * Storage.js - Modul pro správu lokálního úložiště
- * 
- * Tento modul poskytuje funkce pro ukládání a načítání dat z localStorage,
- * což umožňuje aplikaci fungovat offline.
- */
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Offline POS systém pro správu ubytování a prodeje nápojů">
+    <meta name="theme-color" content="#3498db">
+    <title>Villa POS Systém</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/animations.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="images/icons/icon-192x192.png">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Hlavní navigace -->
+        <nav class="main-nav">
+            <div class="logo">
+                <h1>Villa POS</h1>
+            </div>
+            <div class="nav-tabs">
+                <button class="nav-tab active" data-target="pos-section">
+                    <i class="fas fa-cash-register"></i> POS
+                </button>
+                <button class="nav-tab" data-target="stats-section">
+                    <i class="fas fa-chart-line"></i> Statistiky
+                </button>
+                <button class="nav-tab" data-target="settings-section">
+                    <i class="fas fa-cog"></i> Nastavení
+                </button>
+            </div>
+            <div class="location-selector">
+                <select id="location-select">
+                    <option value="ohyeah">Oh Yeah</option>
+                    <option value="amazingpool">Amazing Pool</option>
+                    <option value="littlecastle">Little Castle</option>
+                </select>
+            </div>
+        </nav>
 
-const Storage = (() => {
-    // Klíče pro localStorage
-    const KEYS = {
-        CART: 'villa_pos_cart',
-        SETTINGS: 'villa_pos_settings',
-        SALES: 'villa_pos_sales',
-        CURRENT_LOCATION: 'villa_pos_location'
-    };
+        <!-- Hlavní sekce -->
+        <main class="main-content">
+            <!-- POS Sekce -->
+            <section id="pos-section" class="content-section active">
+                <div class="pos-container">
+                    <div class="product-panel">
+                        <div class="search-bar">
+                            <input type="text" id="search-input" placeholder="Vyhledat produkt...">
+                            <button id="search-btn"><i class="fas fa-search"></i></button>
+                        </div>
+                        
+                        <div class="category-filters">
+                            <button class="category-btn active" data-category="all">Vše</button>
+                            <button class="category-btn" data-category="nealko">Nealko</button>
+                            <button class="category-btn" data-category="alkohol">Alkohol</button>
+                            <button class="category-btn" data-category="pivo">Pivo</button>
+                            <button class="category-btn" data-category="relax">Relax</button>
+                        </div>
+                        
+                        <div class="products-grid" id="products-container">
+                            <!-- Produkty budou generovány pomocí JS -->
+                        </div>
+                    </div>
+                    
+                    <div class="cart-panel">
+                        <div class="cart-header">
+                            <h2>Košík</h2>
+                            <button id="clear-cart"><i class="fas fa-trash"></i> Vyčistit</button>
+                        </div>
+                        
+                        <div class="cart-items" id="cart-items">
+                            <!-- Položky košíku budou generovány pomocí JS -->
+                            <div class="empty-cart-message">Košík je prázdný</div>
+                        </div>
+                        
+                        <div class="cart-summary">
+                            <div class="subtotal">
+                                <span>Mezisoučet:</span>
+                                <span id="subtotal-amount">0 Kč</span>
+                            </div>
+                            <div class="currency-toggle">
+                                <label class="switch">
+                                    <input type="checkbox" id="currency-toggle">
+                                    <span class="slider"></span>
+                                </label>
+                                <span id="currency-label">Kč / €</span>
+                            </div>
+                            <button id="checkout-btn" class="checkout-btn">
+                                <i class="fas fa-receipt"></i> Vytvořit účtenku
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-    // Výchozí nastavení
-    const DEFAULT_SETTINGS = {
-        darkMode: false,
-        defaultCurrency: 'czk',
-        exchangeRate: 25
-    };
+            <!-- Statistiky Sekce -->
+            <section id="stats-section" class="content-section">
+                <div class="stats-container">
+                    <h2>Statistiky prodeje</h2>
+                    <div class="stats-cards">
+                        <div class="stats-card">
+                            <h3>Dnešní prodeje</h3>
+                            <p id="today-sales">0 Kč</p>
+                        </div>
+                        <div class="stats-card">
+                            <h3>Tento týden</h3>
+                            <p id="week-sales">0 Kč</p>
+                        </div>
+                        <div class="stats-card">
+                            <h3>Tento měsíc</h3>
+                            <p id="month-sales">0 Kč</p>
+                        </div>
+                        <div class="stats-card">
+                            <h3>Počet transakcí</h3>
+                            <p id="transactions-count">0</p>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Prodeje podle kategorií</h3>
+                        <canvas id="categories-chart"></canvas>
+                    </div>
+                    
+                    <div class="chart-container">
+                        <h3>Prodeje podle lokací</h3>
+                        <canvas id="locations-chart"></canvas>
+                    </div>
+                    
+                    <div class="export-section">
+                        <h3>Export dat</h3>
+                        <div class="export-buttons">
+                            <button id="export-pdf" class="export-btn">
+                                <i class="fas fa-file-pdf"></i> Export do PDF
+                            </button>
+                            <button id="export-csv" class="export-btn">
+                                <i class="fas fa-file-csv"></i> Export do CSV
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
-    /**
-     * Uloží data do localStorage
-     * @param {string} key - Klíč pro uložení
-     * @param {any} data - Data k uložení
-     */
-    const saveData = (key, data) => {
-        try {
-            localStorage.setItem(key, JSON.stringify(data));
-        } catch (error) {
-            console.error('Chyba při ukládání dat:', error);
-        }
-    };
+            <!-- Nastavení Sekce -->
+            <section id="settings-section" class="content-section">
+                <div class="settings-container">
+                    <h2>Nastavení</h2>
+                    
+                    <div class="settings-group">
+                        <h3>Vzhled</h3>
+                        <div class="setting-item">
+                            <span>Tmavý režim</span>
+                            <label class="switch">
+                                <input type="checkbox" id="dark-mode-toggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h3>Nastavení aplikace</h3>
+                        <div class="setting-item">
+                            <span>Výchozí měna</span>
+                            <select id="default-currency">
+                                <option value="czk">CZK (Kč)</option>
+                                <option value="eur">EUR (€)</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <span>Kurz EUR/CZK</span>
+                            <input type="number" id="exchange-rate" min="20" step="0.1" value="25">
+                        </div>
+                    </div>
+                    
+                    <div class="settings-group">
+                        <h3>Data</h3>
+                        <button id="reset-data" class="danger-btn">
+                            <i class="fas fa-exclamation-triangle"></i> Vymazat všechna data
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
 
-    /**
-     * Načte data z localStorage
-     * @param {string} key - Klíč k načtení
-     * @param {any} defaultValue - Výchozí hodnota, pokud data neexistují
-     * @returns {any} - Načtená data nebo výchozí hodnota
-     */
-    const loadData = (key, defaultValue = null) => {
-        try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : defaultValue;
-        } catch (error) {
-            console.error('Chyba při načítání dat:', error);
-            return defaultValue;
-        }
-    };
+    <!-- Modal pro účtenku -->
+    <div id="receipt-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Účtenka</h2>
+            <div id="receipt-content">
+                <!-- Obsah účtenky bude generován JS -->
+            </div>
+            <div class="modal-buttons">
+                <button id="print-receipt" class="modal-btn">
+                    <i class="fas fa-print"></i> Tisk
+                </button>
+                <button id="save-receipt" class="modal-btn">
+                    <i class="fas fa-save"></i> Uložit
+                </button>
+                <button id="close-receipt" class="modal-btn">
+                    <i class="fas fa-times"></i> Zavřít
+                </button>
+            </div>
+        </div>
+    </div>
 
-    /**
-     * Uloží košík do localStorage
-     * @param {Array} cart - Pole položek košíku
-     */
-    const saveCart = (cart) => {
-        saveData(KEYS.CART, cart);
-    };
+    <!-- Modal pro speciální produkty -->
+    <div id="product-modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="product-modal-title">Produkt</h2>
+            <div id="product-modal-content">
+                <div class="input-group" id="city-tax-inputs">
+                    <label for="persons-count">Počet osob:</label>
+                    <input type="number" id="persons-count" min="1" value="1">
+                    <label for="nights-count">Počet nocí:</label>
+                    <input type="number" id="nights-count" min="1" value="1">
+                    <p id="city-tax-result">Celkem: 2 €</p>
+                </div>
+                
+                <div class="input-group" id="wellness-inputs">
+                    <label for="wellness-price">Cena (€):</label>
+                    <input type="number" id="wellness-price" min="0" step="0.5" value="0">
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="add-special-product" class="modal-btn">
+                    <i class="fas fa-plus"></i> Přidat do košíku
+                </button>
+                <button id="cancel-special-product" class="modal-btn">
+                    <i class="fas fa-times"></i> Zrušit
+                </button>
+            </div>
+        </div>
+    </div>
 
-    /**
-     * Načte košík z localStorage
-     * @returns {Array} - Položky košíku nebo prázdné pole
-     */
-    const loadCart = () => {
-        return loadData(KEYS.CART, []);
-    };
-
-    /**
-     * Uloží nastavení do localStorage
-     * @param {Object} settings - Objekt s nastavením
-     */
-    const saveSettings = (settings) => {
-        saveData(KEYS.SETTINGS, settings);
-    };
-
-    /**
-     * Načte nastavení z localStorage
-     * @returns {Object} - Nastavení nebo výchozí hodnoty
-     */
-    const loadSettings = () => {
-        return loadData(KEYS.SETTINGS, DEFAULT_SETTINGS);
-    };
-
-    /**
-     * Uloží informace o prodeji
-     * @param {Object} sale - Informace o prodeji
-     */
-    const saveSale = (sale) => {
-        // Přidáme časové razítko
-        sale.timestamp = new Date().toISOString();
-        
-        // Načteme existující prodeje
-        const sales = loadData(KEYS.SALES, []);
-        
-        // Přidáme nový prodej
-        sales.push(sale);
-        
-        // Uložíme zpět
-        saveData(KEYS.SALES, sales);
-    };
-
-    /**
-     * Načte všechny prodeje
-     * @returns {Array} - Seznam prodejů
-     */
-    const loadSales = () => {
-        return loadData(KEYS.SALES, []);
-    };
-
-    /**
-     * Uloží aktuální lokaci
-     * @param {string} location - ID lokace
-     */
-    const saveCurrentLocation = (location) => {
-        saveData(KEYS.CURRENT_LOCATION, location);
-    };
-
-    /**
-     * Načte aktuální lokaci
-     * @returns {string} - ID aktuální lokace
-     */
-    const loadCurrentLocation = () => {
-        return loadData(KEYS.CURRENT_LOCATION, 'ohyeah');
-    };
-
-    /**
-     * Vymaže všechna data z localStorage
-     */
-    const clearAllData = () => {
-        try {
-            localStorage.removeItem(KEYS.CART);
-            localStorage.removeItem(KEYS.SETTINGS);
-            localStorage.removeItem(KEYS.SALES);
-            localStorage.removeItem(KEYS.CURRENT_LOCATION);
-        } catch (error) {
-            console.error('Chyba při mazání dat:', error);
-        }
-    };
-
-    return {
-        saveCart,
-        loadCart,
-        saveSettings,
-        loadSettings,
-        saveSale,
-        loadSales,
-        saveCurrentLocation,
-        loadCurrentLocation,
-        clearAllData,
-        DEFAULT_SETTINGS
-    };
-})();
+    <!-- Skripty -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/inventory.js"></script>
+    <script src="js/cart.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/statistics.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
