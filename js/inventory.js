@@ -171,19 +171,25 @@ const Inventory = (() => {
         }
     ];
 
-    // Lokace
+    // Lokace s jedinečnými pastelovými barvami
     const locations = [
         {
             id: 'ohyeah',
-            name: 'Oh Yeah'
+            name: 'Oh Yeah',
+            color: '#FFD6BA',  // Pastelová meruňková
+            textColor: '#333333' // Tmavý text
         },
         {
             id: 'amazingpool',
-            name: 'Amazing Pool'
+            name: 'Amazing Pool',
+            color: '#BAFDFF',  // Pastelová azurová
+            textColor: '#333333' // Tmavý text
         },
         {
             id: 'littlecastle',
-            name: 'Little Castle'
+            name: 'Little Castle',
+            color: '#D4BAFF',  // Pastelová levandulová
+            textColor: '#333333' // Tmavý text
         }
     ];
 
@@ -246,6 +252,15 @@ const Inventory = (() => {
     };
 
     /**
+     * Získá lokaci podle ID
+     * @param {string} id - ID lokace
+     * @returns {Object|null} - Lokace nebo null
+     */
+    const getLocationById = (id) => {
+        return locations.find(location => location.id === id) || null;
+    };
+
+    /**
      * Převede cenu produktu na jinou měnu
      * @param {number} price - Cena produktu
      * @param {string} fromCurrency - Původní měna
@@ -290,6 +305,7 @@ const Inventory = (() => {
         searchProducts,
         getCategories,
         getLocations,
+        getLocationById,
         convertCurrency,
         formatPrice
     };
