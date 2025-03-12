@@ -1,7 +1,4 @@
-/**
- * UI.js - Modul pro správu uživatelského rozhraní
- */
-
+// UI.js - Modul pro správu uživatelského rozhraní
 const UI = (() => {
     // Reference na DOM elementy
     const elements = {
@@ -44,7 +41,6 @@ const UI = (() => {
         transactionsCount: document.getElementById('transactions-count'),
         exportPdfBtn: document.getElementById('export-pdf'),
         exportCsvBtn: document.getElementById('export-csv'),
-        // Nové elementy pro mobilní košík
         cartPanel: document.querySelector('.cart-panel'),
         cartToggleBtn: document.getElementById('cart-toggle-btn'),
         cartOverlay: document.getElementById('cart-overlay'),
@@ -58,43 +54,55 @@ const UI = (() => {
     
     // Inicializuje UI modul
     const init = () => {
-        // Načteme nastavení
         const settings = Storage.loadSettings();
         
-        // Nastavíme tmavý režim, pokud je uložen
         if (settings.darkMode) {
             document.body.classList.add('dark-mode');
             elements.darkModeToggle.checked = true;
         }
         
-        // Nastavíme výchozí měnu
         elements.defaultCurrency.value = settings.defaultCurrency;
         currentDisplayCurrency = settings.defaultCurrency;
         elements.currencyToggle.checked = settings.defaultCurrency === 'eur';
         
-        // Nastavíme kurz
         elements.exchangeRate.value = settings.exchangeRate;
         
-        // Načteme aktuální lokaci
         const currentLocation = Storage.loadCurrentLocation();
         elements.locationSelect.value = currentLocation;
         
-        // Zobrazíme produkty
+        // Zobrazíme barevné záhlaví lokace
+        updateLocationHeader(currentLocation);
+        
         renderProducts();
-        
-        // Zobrazíme košík
         renderCart();
-        
-        // Aktualizujeme počítadlo košíku
         updateCartCount();
         
-        // Skryjeme košík při spuštění na mobilních zařízeních
         if (window.innerWidth <= 768) {
             hideCart();
         }
         
-        // Přidáme event listenery
         setupEventListeners();
+    };
+    
+    // Aktualizuje hlavičku lokace s barvou
+    const updateLocationHeader = (locationId) => {
+        const existingHeader = document.querySelector('.location-header');
+        if (existingHeader) {
+            existingHeader.remove();
+        }
+        
+        const location = Inventory.getLocationById(locationId);
+        if (!location) return;
+        
+        const header = document.createElement('div');
+        header.className = 'location-header';
+        header.textContent = location.name;
+        
+        header.style.backgroundColor = location.color;
+        header.style.color = location.textColor;
+        
+        const posSection = document.getElementById('pos-section');
+        posSection.insertBefore(header, posSection.firstChild);
     };
     
     // Nastaví event listenery
@@ -138,7 +146,9 @@ const UI = (() => {
         
         // Změna lokace
         elements.locationSelect.addEventListener('change', () => {
-            Storage.saveCurrentLocation(elements.locationSelect.value);
+            const selectedLocation = elements.locationSelect.value;
+            Storage.saveCurrentLocation(selectedLocation);
+            updateLocationHeader(selectedLocation);
         });
         
         // Přepínání měny
@@ -224,6 +234,7 @@ const UI = (() => {
             const printWindow = window.open('', '_blank');
             printWindow.document.write('<html><head><title>Účtenka</title>');
             printWindow.document.write('<link rel="stylesheet" href="css/main.css">');
+            printWindow.document.write('<link rel="stylesheet" href="css/locations.css">');
             printWindow.document.write('</head><body>');
             printWindow.document.write(elements.receiptContent.innerHTML);
             printWindow.document.write('</body></html>');
@@ -256,7 +267,7 @@ const UI = (() => {
             if (selectedProduct.special === 'citytax') {
                 const persons = parseInt(elements.personsCount.value);
                 const nights = parseInt(elements.nightsCount.value);
-                const totalPrice = persons * nights * 2; // 2€ za osobu na noc
+                const totalPrice = persons * nights * 2;
                 customData = { persons, nights, price: totalPrice };
             }
             
@@ -340,10 +351,7 @@ const UI = (() => {
                 displayCurrency = product.currency;
             } else {
                 displayPrice = Inventory.convertCurrency(
-                    product.price, 
-                    product.currency, 
-                    currentDisplayCurrency, 
-                    settings.exchangeRate
+                    product.price, product.currency, currentDisplayCurrency, settings.exchangeRate
                 );
                 displayCurrency = currentDisplayCurrency;
             }
@@ -415,10 +423,7 @@ const UI = (() => {
                 displayCurrency = item.currency;
             } else {
                 displayPrice = Inventory.convertCurrency(
-                    item.price, 
-                    item.currency, 
-                    currentDisplayCurrency, 
-                    settings.exchangeRate
+                    item.price, item.currency, currentDisplayCurrency, settings.exchangeRate
                 );
                 displayCurrency = currentDisplayCurrency;
             }
@@ -484,12 +489,7 @@ const UI = (() => {
         const count = Cart.getItemCount();
         if (elements.cartCount) {
             elements.cartCount.textContent = count;
-            
-            if (count === 0) {
-                elements.cartCount.style.display = 'none';
-            } else {
-                elements.cartCount.style.display = 'flex';
-            }
+            elements.cartCount.style.display = count === 0 ? 'none' : 'flex';
         }
     };
     
@@ -555,8 +555,17 @@ const UI = (() => {
     // Generuje HTML pro účtenku
     const generateReceiptHtml = (data) => {
         const { items, location, totalCZK, totalEUR, timestamp, exchangeRate } = data;
-        const locationName = Inventory.getLocations().find(loc => loc.id === location)?.name || location;
-        const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+        
+        // Získáme informace o lokaci včetně barvy
+        const locationInfo = Inventory.getLocationById(location);
+        const locationName = locationInfo ? locationInfo.name : location;
+        const locationColor = locationInfo ? locationInfo.color : '#f8f8f8';
+        const textColor = locationInfo ? locationInfo.textColor : '#333333';
+        
+        const dateOptions = { 
+            day: '2-digit', month: '2-digit', year: 'numeric',
+            hour: '2-digit', minute: '2-digit'
+        };
         const formattedDate = new Date(timestamp).toLocaleDateString('cs-CZ', dateOptions);
         
         let itemsHtml = '';
@@ -584,7 +593,7 @@ const UI = (() => {
         
         return `
             <div class="receipt">
-                <div class="receipt-header">
+                <div class="receipt-header" style="background-color: ${locationColor}; color: ${textColor};">
                     <h3>Villa POS Systém</h3>
                     <p>Lokace: ${locationName}</p>
                     <p>Datum: ${formattedDate}</p>
@@ -607,8 +616,8 @@ const UI = (() => {
                 </div>
                 
                 <div class="receipt-summary">
-                    <p>Celkem CZK: ${totalCZK.toFixed(0)} Kč</p>
-                    <p>Celkem EUR: ${totalEUR.toFixed(2)} €</p>
+                    <p><strong>Celkem CZK:</strong> ${totalCZK.toFixed(0)} Kč</p>
+                    <p><strong>Celkem EUR:</strong> ${totalEUR.toFixed(2)} €</p>
                     <p>Kurz: 1 € = ${exchangeRate} Kč</p>
                 </div>
                 
