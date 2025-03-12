@@ -1,24 +1,29 @@
 /* Základní reset a proměnné */
 :root {
-    /* Základní barvy */
-    --primary: #3498db;
-    --primary-dark: #2980b9;
-    --secondary: #e67e22;
-    --secondary-dark: #d35400;
-    --accent: #9b59b6;
-    --success: #2ecc71;
-    --warning: #f1c40f;
-    --danger: #e74c3c;
+    /* Základní barvy - nová barevná paleta 2025 */
+    --primary: #A47864;      /* Pantone Mocha Mousse */
+    --primary-dark: #8A6351; /* Tmavší verze Mocha Mousse */
+    --secondary: #F2D8B9;    /* Krémová */
+    --secondary-light: #F9E7D2; /* Světlá krémová */
+    --accent-blue: #B9E0F2;  /* Eterická modrá */
+    --accent-yellow: #F2E2B9; /* Teplá žlutá */
     
     /* Textové barvy */
-    --text-dark: #2c3e50;
-    --text-light: #ecf0f1;
-    --text-muted: #95a5a6;
+    --text-dark: #3A3A3A;    /* Téměř černá */
+    --text-medium: #676767;  /* Středně šedá pro běžný text */
+    --text-light: #f9f9f9;   /* Téměř bílá */
+    --text-muted: #a0a0a0;   /* Tlumená šedá */
     
     /* Pozadí */
-    --bg-light: #ffffff;
-    --bg-gray: #f5f7fa;
-    --bg-dark: #34495e;
+    --bg-light: #ffffff;     /* Bílá */
+    --bg-cream: #F9F5F0;     /* Velmi světlá krémová */
+    --bg-gray: #F5F5F5;      /* Světle šedá */
+    --bg-dark: #696158;      /* Tmavší šedohnědá */
+    
+    /* Status barvy */
+    --success: #75B798;      /* Přirozená zelená */
+    --warning: #FFD485;      /* Měkká žlutá */
+    --danger: #E27D7A;       /* Tlumená červená */
     
     /* Rozměry a mezery */
     --spacing-xs: 0.25rem;
@@ -27,37 +32,41 @@
     --spacing-lg: 1.5rem;
     --spacing-xl: 2rem;
     
-    /* Zaoblení */
-    --border-radius-sm: 4px;
-    --border-radius-md: 8px;
-    --border-radius-lg: 12px;
+    /* Zaoblení - zvýšené hodnoty pro bento styl */
+    --border-radius-sm: 8px;   /* Zvýšeno ze 4px */
+    --border-radius-md: 12px;  /* Zvýšeno z 8px */
+    --border-radius-lg: 16px;  /* Zvýšeno z 12px */
+    --border-radius-xl: 24px;  /* Nové pro extra zaoblení */
     
-    /* Stíny */
-    --shadow-sm: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
-    --shadow-md: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
-    --shadow-lg: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+    /* Stíny - jemnější a měkčí */
+    --shadow-sm: 0 2px 6px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.12);
     
     /* Přechody */
     --transition-fast: all 0.2s ease;
     --transition-normal: all 0.3s ease;
     --transition-slow: all 0.5s ease;
+    
+    /* Nové gradienty */
+    --gradient-main: linear-gradient(135deg, var(--secondary) 0%, var(--accent-blue) 100%);
+    --gradient-accent: linear-gradient(135deg, var(--secondary) 0%, var(--accent-yellow) 100%);
 }
 
 /* Tmavý režim */
 body.dark-mode {
-    --primary: #2980b9;
-    --primary-dark: #1c628f;
-    --secondary: #d35400;
-    --secondary-dark: #a04000;
-    --accent: #8e44ad;
+    --primary: #A47864;
+    --primary-dark: #75584A;
     
-    --text-dark: #ecf0f1;
-    --text-light: #34495e;
-    --text-muted: #7f8c8d;
+    --text-dark: #F0F0F0;
+    --text-medium: #BBBBBB;
+    --text-light: #2C2C2C;
+    --text-muted: #909090;
     
-    --bg-light: #2c3e50;
-    --bg-gray: #34495e;
-    --bg-dark: #1a252f;
+    --bg-light: #252525;
+    --bg-cream: #2A2A2A;
+    --bg-gray: #333333;
+    --bg-dark: #1A1A1A;
 }
 
 /* Základní reset a typografie */
@@ -68,11 +77,11 @@ body.dark-mode {
 }
 
 html, body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
     font-size: 16px;
     line-height: 1.5;
-    color: var(--text-dark);
-    background-color: var(--bg-gray);
+    color: var(--text-medium);
+    background-color: var(--bg-cream);
     height: 100%;
     overflow: hidden;
 }
@@ -81,6 +90,7 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
     line-height: 1.2;
     margin-bottom: var(--spacing-md);
+    color: var(--text-dark);
 }
 
 button, input, select, textarea {
@@ -96,7 +106,7 @@ button, input, select, textarea {
     height: 100vh;
     max-width: 1400px;
     margin: 0 auto;
-    background-color: var(--bg-light);
+    background: var(--gradient-main);
     box-shadow: var(--shadow-lg);
 }
 
@@ -107,16 +117,24 @@ button, input, select, textarea {
     padding: var(--spacing-md) var(--spacing-lg);
     background-color: var(--primary);
     color: var(--text-light);
+    border-bottom-left-radius: var(--border-radius-lg);
+    border-bottom-right-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
 }
 
 .logo h1 {
-    font-size: 1.5rem;
+    font-size: 24px;
+    font-weight: 700;
     margin: 0;
+    color: var(--text-light);
 }
 
 .nav-tabs {
     display: flex;
     gap: var(--spacing-md);
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: var(--spacing-xs);
+    border-radius: var(--border-radius-lg);
 }
 
 .nav-tab {
@@ -127,33 +145,38 @@ button, input, select, textarea {
     opacity: 0.8;
     cursor: pointer;
     transition: var(--transition-fast);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-md);
+    font-weight: 500;
 }
 
 .nav-tab:hover {
     opacity: 1;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .nav-tab.active {
     opacity: 1;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.3);
     font-weight: 600;
+    box-shadow: var(--shadow-sm);
 }
 
 .location-selector select {
     padding: var(--spacing-sm) var(--spacing-md);
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-md);
     border: none;
-    background-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.3);
     color: var(--text-light);
     cursor: pointer;
+    box-shadow: var(--shadow-sm);
 }
 
 .main-content {
     flex: 1;
     overflow-y: auto;
     position: relative;
+    padding-bottom: 70px; /* Space for bottom navigation */
 }
 
 .content-section {
@@ -170,26 +193,31 @@ button, input, select, textarea {
 button {
     padding: var(--spacing-sm) var(--spacing-md);
     border: none;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-md);
     background-color: var(--primary);
     color: white;
     cursor: pointer;
     transition: var(--transition-fast);
+    font-weight: 500;
 }
 
 button:hover {
     background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 input, select {
     padding: var(--spacing-sm) var(--spacing-md);
     border: 1px solid #ddd;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-md);
     background-color: white;
     transition: var(--transition-fast);
 }
@@ -197,7 +225,7 @@ input, select {
 input:focus, select:focus {
     outline: none;
     border-color: var(--primary);
-    box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+    box-shadow: 0 0 0 2px rgba(164, 120, 100, 0.2);
 }
 
 /* Speciální tlačítka */
@@ -206,7 +234,7 @@ input:focus, select:focus {
 }
 
 .danger-btn:hover {
-    background-color: #c0392b;
+    background-color: #D06864;
 }
 
 .success-btn {
@@ -214,7 +242,7 @@ input:focus, select:focus {
 }
 
 .success-btn:hover {
-    background-color: #27ae60;
+    background-color: #62A283;
 }
 
 /* Přepínače */
@@ -284,7 +312,7 @@ input:checked + .slider:before {
     background-color: var(--bg-light);
     margin: 10% auto;
     padding: var(--spacing-lg);
-    border-radius: var(--border-radius-md);
+    border-radius: var(--border-radius-lg);
     max-width: 500px;
     box-shadow: var(--shadow-lg);
     animation: modalAppear 0.3s ease;
@@ -307,10 +335,13 @@ input:checked + .slider:before {
     right: var(--spacing-md);
     font-size: 1.5rem;
     cursor: pointer;
+    color: var(--text-muted);
+    transition: var(--transition-fast);
 }
 
 .close:hover {
     color: var(--danger);
+    transform: rotate(90deg);
 }
 
 .modal-buttons {
@@ -332,12 +363,90 @@ input:checked + .slider:before {
 .input-group label {
     display: block;
     margin-bottom: var(--spacing-xs);
+    color: var(--text-medium);
 }
 
 .input-group input,
 .input-group select {
     width: 100%;
     margin-bottom: var(--spacing-sm);
+}
+
+/* Spodní navigace pro mobilní zařízení */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: var(--primary);
+    display: flex;
+    justify-content: space-around;
+    padding: var(--spacing-sm) 0;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 90;
+    border-top-left-radius: var(--border-radius-lg);
+    border-top-right-radius: var(--border-radius-lg);
+}
+
+.bottom-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: rgba(255,255,255,0.7);
+    padding: var(--spacing-xs);
+    font-size: 0.8rem;
+    transition: var(--transition-fast);
+}
+
+.bottom-nav-item.active {
+    color: white;
+}
+
+.bottom-nav-item i {
+    font-size: 1.3rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+/* Platební metody */
+.payment-methods {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    margin: var(--spacing-md) 0;
+}
+
+.payment-method {
+    flex: 1;
+    min-width: 100px;
+    background-color: var(--bg-light);
+    border-radius: var(--border-radius-md);
+    padding: var(--spacing-md);
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    border: 2px solid transparent;
+}
+
+.payment-method:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+}
+
+.payment-method.active {
+    border-color: var(--primary);
+    background-color: var(--secondary-light);
+}
+
+.payment-method i {
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-xs);
+    color: var(--primary);
+}
+
+.payment-method-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-medium);
 }
 
 /* Responzivní design */
@@ -408,9 +517,51 @@ input:checked + .slider:before {
         z-index: 100;
         display: flex;
         justify-content: space-around;
+        border-top-left-radius: var(--border-radius-lg);
+        border-top-right-radius: var(--border-radius-lg);
     }
     
     .content-section {
         padding: var(--spacing-xs);
     }
+}
+
+/* Vyhledávání - přesunuto nahoru */
+.search-container {
+    padding: var(--spacing-md);
+    background-color: var(--bg-cream);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--spacing-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.search-bar {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-bar input {
+    flex: 1;
+    padding: var(--spacing-md);
+    padding-left: 40px; /* Prostor pro ikonu */
+    border-radius: var(--border-radius-md);
+    border: 1px solid #ddd;
+    font-size: 16px;
+    transition: var(--transition-fast);
+}
+
+.search-bar i {
+    position: absolute;
+    left: 12px;
+    color: var(--text-muted);
+}
+
+.search-bar input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(164, 120, 100, 0.1);
+}
+
+.search-bar input::placeholder {
+    color: var(--text-muted);
 }
