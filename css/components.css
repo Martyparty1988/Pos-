@@ -90,8 +90,10 @@
 
 .product-card img {
     width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
+    height: 150px;
+    object-fit: contain;
+    padding: 5px;
+    background-color: #f9f9f9;
 }
 
 .product-info {
