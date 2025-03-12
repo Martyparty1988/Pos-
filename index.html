@@ -1,149 +1,153 @@
-<!DOCTYPE html>
-<html lang="cs">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#2c3e50">
-    <title>Villa POS</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="images/icon-192.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="images/icon-192.png">
-</head>
-<body>
-    <!-- Hlavní navigace -->
-    <nav class="main-nav">
-        <button id="nav-pos" class="nav-item active">POS</button>
-        <button id="nav-inventory" class="nav-item">Sklad</button>
-        <button id="nav-stats" class="nav-item">Statistiky</button>
-        <button id="nav-settings" class="nav-item">Nastavení</button>
-    </nav>
+/**
+ * Storage.js - Modul pro správu lokálního úložiště
+ * 
+ * Tento modul poskytuje funkce pro ukládání a načítání dat z localStorage,
+ * což umožňuje aplikaci fungovat offline.
+ */
 
-    <!-- POS stránka -->
-    <div id="pos-page" class="page">
-        <header>
-            <h1>Villa POS</h1>
-            <div id="status-bar">
-                <span id="connection-status" class="online">Online</span>
-            </div>
-        </header>
+const Storage = (() => {
+    // Klíče pro localStorage
+    const KEYS = {
+        CART: 'villa_pos_cart',
+        SETTINGS: 'villa_pos_settings',
+        SALES: 'villa_pos_sales',
+        CURRENT_LOCATION: 'villa_pos_location'
+    };
 
-        <div class="location-selector">
-            <select id="location-select">
-                <option value="oh-yeah">Oh Yeah</option>
-                <option value="amazing-pool">Amazing Pool</option>
-                <option value="little-castle">Little Castle</option>
-            </select>
-        </div>
+    // Výchozí nastavení
+    const DEFAULT_SETTINGS = {
+        darkMode: false,
+        defaultCurrency: 'czk',
+        exchangeRate: 25
+    };
 
-        <div class="search-container">
-            <input type="text" id="search-input" placeholder="Vyhledat produkt...">
-            <button id="search-button">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                </svg>
-            </button>
-        </div>
+    /**
+     * Uloží data do localStorage
+     * @param {string} key - Klíč pro uložení
+     * @param {any} data - Data k uložení
+     */
+    const saveData = (key, data) => {
+        try {
+            localStorage.setItem(key, JSON.stringify(data));
+        } catch (error) {
+            console.error('Chyba při ukládání dat:', error);
+        }
+    };
 
-        <nav>
-            <button class="category active" data-category="all">Vše</button>
-            <button class="category" data-category="non-alcoholic">Nealko</button>
-            <button class="category" data-category="alcoholic">Alkohol</button>
-            <button class="category" data-category="beer">Piva</button>
-            <button class="category" data-category="relax">Relax</button>
-        </nav>
+    /**
+     * Načte data z localStorage
+     * @param {string} key - Klíč k načtení
+     * @param {any} defaultValue - Výchozí hodnota, pokud data neexistují
+     * @returns {any} - Načtená data nebo výchozí hodnota
+     */
+    const loadData = (key, defaultValue = null) => {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : defaultValue;
+        } catch (error) {
+            console.error('Chyba při načítání dat:', error);
+            return defaultValue;
+        }
+    };
 
-        <div id="product-list">
-            <!-- Produkty budou přidány dynamicky -->
-        </div>
+    /**
+     * Uloží košík do localStorage
+     * @param {Array} cart - Pole položek košíku
+     */
+    const saveCart = (cart) => {
+        saveData(KEYS.CART, cart);
+    };
 
-        <div class="cart-container">
-            <h2>Košík</h2>
-            <div id="cart-items">
-                <div class="empty-cart">Košík je prázdný</div>
-            </div>
-            <div class="cart-summary">
-                <p>Počet položek: <span id="item-count">0</span></p>
-                <p>Celkem CZK: <span id="total-price-czk">0 CZK</span></p>
-                <p>Celkem EUR: <span id="total-price-eur">0 EUR</span></p>
-            </div>
-            <div class="cart-actions">
-                <button id="clear-cart">Vymazat</button>
-                <button id="checkout">Hotovo</button>
-            </div>
-        </div>
-    </div>
+    /**
+     * Načte košík z localStorage
+     * @returns {Array} - Položky košíku nebo prázdné pole
+     */
+    const loadCart = () => {
+        return loadData(KEYS.CART, []);
+    };
 
-    <!-- Sklad stránka -->
-    <div id="inventory-page" class="page hidden">
-        <header>
-            <h1>Správa skladu</h1>
-        </header>
-        <div class="placeholder-content">
-            <p>Zde bude správa skladu</p>
-        </div>
-    </div>
+    /**
+     * Uloží nastavení do localStorage
+     * @param {Object} settings - Objekt s nastavením
+     */
+    const saveSettings = (settings) => {
+        saveData(KEYS.SETTINGS, settings);
+    };
 
-    <!-- Statistiky stránka -->
-    <div id="stats-page" class="page hidden">
-        <header>
-            <h1>Statistiky prodejů</h1>
-        </header>
-        <div class="placeholder-content">
-            <p>Zde budou statistiky</p>
-        </div>
-    </div>
+    /**
+     * Načte nastavení z localStorage
+     * @returns {Object} - Nastavení nebo výchozí hodnoty
+     */
+    const loadSettings = () => {
+        return loadData(KEYS.SETTINGS, DEFAULT_SETTINGS);
+    };
 
-    <!-- Nastavení stránka -->
-    <div id="settings-page" class="page hidden">
-        <header>
-            <h1>Nastavení aplikace</h1>
-        </header>
-        <div class="placeholder-content">
-            <p>Zde bude nastavení</p>
-        </div>
-    </div>
+    /**
+     * Uloží informace o prodeji
+     * @param {Object} sale - Informace o prodeji
+     */
+    const saveSale = (sale) => {
+        // Přidáme časové razítko
+        sale.timestamp = new Date().toISOString();
+        
+        // Načteme existující prodeje
+        const sales = loadData(KEYS.SALES, []);
+        
+        // Přidáme nový prodej
+        sales.push(sale);
+        
+        // Uložíme zpět
+        saveData(KEYS.SALES, sales);
+    };
 
-    <!-- Modální okno pro vlastní cenu -->
-    <div id="custom-price-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Zadat vlastní cenu</h2>
-            <div class="custom-price-input">
-                <label for="custom-price">Cena:</label>
-                <input type="number" id="custom-price" min="0" step="1">
-                <select id="custom-currency">
-                    <option value="EUR">EUR</option>
-                    <option value="CZK">CZK</option>
-                </select>
-            </div>
-            <button id="confirm-custom-price">Potvrdit</button>
-        </div>
-    </div>
+    /**
+     * Načte všechny prodeje
+     * @returns {Array} - Seznam prodejů
+     */
+    const loadSales = () => {
+        return loadData(KEYS.SALES, []);
+    };
 
-    <!-- Modální okno pro dokončení objednávky -->
-    <div id="checkout-modal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>Dokončit objednávku</h2>
-            <div class="checkout-summary">
-                <h3>Souhrn objednávky</h3>
-                <div id="checkout-items">
-                    <!-- Dynamicky přidané položky -->
-                </div>
-                <p class="checkout-total">Celkem CZK: <span id="checkout-total-czk">0 CZK</span></p>
-                <p class="checkout-total">Celkem EUR: <span id="checkout-total-eur">0 EUR</span></p>
-            </div>
-            <div class="checkout-actions">
-                <button id="print-receipt">Tisk účtenky</button>
-                <button id="complete-order">Dokončit</button>
-            </div>
-        </div>
-    </div>
+    /**
+     * Uloží aktuální lokaci
+     * @param {string} location - ID lokace
+     */
+    const saveCurrentLocation = (location) => {
+        saveData(KEYS.CURRENT_LOCATION, location);
+    };
 
-    <!-- Skripty -->
-    <script src="inventory.js"></script>
-    <script src="app.js"></script>
-</body>
-</html>
+    /**
+     * Načte aktuální lokaci
+     * @returns {string} - ID aktuální lokace
+     */
+    const loadCurrentLocation = () => {
+        return loadData(KEYS.CURRENT_LOCATION, 'ohyeah');
+    };
+
+    /**
+     * Vymaže všechna data z localStorage
+     */
+    const clearAllData = () => {
+        try {
+            localStorage.removeItem(KEYS.CART);
+            localStorage.removeItem(KEYS.SETTINGS);
+            localStorage.removeItem(KEYS.SALES);
+            localStorage.removeItem(KEYS.CURRENT_LOCATION);
+        } catch (error) {
+            console.error('Chyba při mazání dat:', error);
+        }
+    };
+
+    return {
+        saveCart,
+        loadCart,
+        saveSettings,
+        loadSettings,
+        saveSale,
+        loadSales,
+        saveCurrentLocation,
+        loadCurrentLocation,
+        clearAllData,
+        DEFAULT_SETTINGS
+    };
+})();
