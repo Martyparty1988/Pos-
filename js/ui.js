@@ -45,6 +45,11 @@ const UI = (() => {
         transactionsCount: document.getElementById('transactions-count'),
         exportPdfBtn: document.getElementById('export-pdf'),
         exportCsvBtn: document.getElementById('export-csv'),
+        // Nové elementy pro mobilní košík
+        cartPanel: document.querySelector('.cart-panel'),
+        cartToggleBtn: document.getElementById('cart-toggle-btn'),
+        cartOverlay: document.getElementById('cart-overlay'),
+        cartCount: document.querySelector('.cart-count'),
     };
 
     // Pomocné proměnné
@@ -82,6 +87,14 @@ const UI = (() => {
         
         // Zobrazíme košík
         renderCart();
+        
+        // Aktualizujeme počítadlo košíku
+        updateCartCount();
+        
+        // Skryjeme košík při spuštění na mobilních zařízeních
+        if (window.innerWidth <= 768) {
+            hideCart();
+        }
         
         // Přidáme event listenery
         setupEventListeners();
@@ -329,6 +342,11 @@ const UI = (() => {
             const productCard = document.createElement('div');
             productCard.className = 'product-card';
             
+            // Označíme speciální produkty pro mobilní zpracování
+            if (product.special) {
+                productCard.dataset.special = product.special;
+            }
+            
             // Zobrazíme cenu ve správné měně
             let displayPrice;
             let displayCurrency;
@@ -384,6 +402,11 @@ const UI = (() => {
                     // Přidáme do košíku
                     Cart.addItem(product);
                     renderCart();
+                    
+                    // Na mobilním zařízení zobrazíme košík po přidání položky
+                    if (window.innerWidth <= 768) {
+                        showCart();
+                    }
                 }
             });
             
@@ -469,16 +492,19 @@ const UI = (() => {
             decreaseBtn.addEventListener('click', () => {
                 Cart.updateItemQuantity(item.id, item.quantity - 1);
                 renderCart();
+                updateCartCount();
             });
             
             increaseBtn.addEventListener('click', () => {
                 Cart.updateItemQuantity(item.id, item.quantity + 1);
                 renderCart();
+                updateCartCount();
             });
             
             removeBtn.addEventListener('click', () => {
                 Cart.removeItem(item.id);
                 renderCart();
+                updateCartCount();
             });
             
             elements.cartItems.appendChild(cartItem);
@@ -487,6 +513,55 @@ const UI = (() => {
         // Aktualizujeme mezisoučet
         const totalPrice = Cart.getTotalPrice(currentDisplayCurrency, settings.exchangeRate);
         elements.subtotalAmount.textContent = Inventory.formatPrice(totalPrice, currentDisplayCurrency);
+        
+        // Aktualizujeme počítadlo košíku
+        updateCartCount();
+    };
+    
+    /**
+     * Aktualizuje počítadlo položek v košíku
+     */
+    const updateCartCount = () => {
+        const count = Cart.getItemCount();
+        if (elements.cartCount) {
+            elements.cartCount.textContent = count;
+            
+            // Skryjeme počítadlo, pokud je prázdné
+            if (count === 0) {
+                elements.cartCount.style.display = 'none';
+            } else {
+                elements.cartCount.style.display = 'flex';
+            }
+        }
+    };
+    
+    /**
+     * Zobrazí košík na mobilních zařízeních
+     */
+    const showCart = () => {
+        elements.cartPanel.classList.add('show');
+        elements.cartOverlay.classList.add('show');
+        document.body.style.overflow = 'hidden'; // Zabraňuje scrollování pozadí
+    };
+    
+    /**
+     * Skryje košík na mobilních zařízeních
+     */
+    const hideCart = () => {
+        elements.cartPanel.classList.remove('show');
+        elements.cartOverlay.classList.remove('show');
+        document.body.style.overflow = ''; // Obnoví scrollování
+    };
+    
+    /**
+     * Přepíná zobrazení košíku na mobilních zařízeních
+     */
+    const toggleCart = () => {
+        if (elements.cartPanel.classList.contains('show')) {
+            hideCart();
+        } else {
+            showCart();
+        }
     };
     
     /**
