@@ -387,4 +387,30 @@ input:checked + .slider:before {
     .modal-btn {
         width: 100%;
     }
+    
+    /* Vylepšení pro mobilní rozložení */
+    .logo h1 {
+        font-size: 1.3rem;
+        margin-bottom: var(--spacing-xs);
+    }
+    
+    .main-content {
+        padding-bottom: 60px; /* Prostor pro navigační prvky na mobilních zařízeních */
+    }
+    
+    .nav-tabs {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: var(--primary);
+        padding: var(--spacing-xs);
+        z-index: 100;
+        display: flex;
+        justify-content: space-around;
+    }
+    
+    .content-section {
+        padding: var(--spacing-xs);
+    }
 }
