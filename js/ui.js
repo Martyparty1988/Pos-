@@ -1,7 +1,5 @@
 /**
  * UI.js - Modul pro správu uživatelského rozhraní
- * 
- * Tento modul poskytuje funkce pro aktualizaci a interakci s UI
  */
 
 const UI = (() => {
@@ -15,6 +13,7 @@ const UI = (() => {
         categoryBtns: document.querySelectorAll('.category-btn'),
         locationSelect: document.getElementById('location-select'),
         clearCartBtn: document.getElementById('clear-cart'),
+        closeCartBtn: document.getElementById('close-cart'),
         checkoutBtn: document.getElementById('checkout-btn'),
         currencyToggle: document.getElementById('currency-toggle'),
         navTabs: document.querySelectorAll('.nav-tab'),
@@ -57,9 +56,7 @@ const UI = (() => {
     let currentDisplayCurrency = 'czk';
     let selectedProduct = null;
     
-    /**
-     * Inicializuje UI modul
-     */
+    // Inicializuje UI modul
     const init = () => {
         // Načteme nastavení
         const settings = Storage.loadSettings();
@@ -100,20 +97,13 @@ const UI = (() => {
         setupEventListeners();
     };
     
-    /**
-     * Nastaví event listenery
-     */
+    // Nastaví event listenery
     const setupEventListeners = () => {
         // Filtrování podle kategorie
         elements.categoryBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // Odebereme aktivní třídu ze všech tlačítek
                 elements.categoryBtns.forEach(b => b.classList.remove('active'));
-                
-                // Přidáme aktivní třídu k vybranému tlačítku
                 btn.classList.add('active');
-                
-                // Získáme kategorii a renderujeme produkty
                 currentCategory = btn.dataset.category;
                 renderProducts();
             });
@@ -135,8 +125,16 @@ const UI = (() => {
             if (confirm('Opravdu chcete vyčistit košík?')) {
                 Cart.clearCart();
                 renderCart();
+                updateCartCount();
             }
         });
+        
+        // Tlačítko pro zavření košíku v mobilním rozložení
+        if (elements.closeCartBtn) {
+            elements.closeCartBtn.addEventListener('click', () => {
+                hideCart();
+            });
+        }
         
         // Změna lokace
         elements.locationSelect.addEventListener('change', () => {
@@ -153,16 +151,11 @@ const UI = (() => {
         elements.navTabs.forEach(tab => {
             tab.addEventListener('click', () => {
                 const targetSection = tab.dataset.target;
-                
-                // Odebereme aktivní třídu ze všech tabů a sekcí
                 elements.navTabs.forEach(t => t.classList.remove('active'));
                 elements.contentSections.forEach(s => s.classList.remove('active'));
-                
-                // Přidáme aktivní třídu k vybranému tabu a sekci
                 tab.classList.add('active');
                 document.getElementById(targetSection).classList.add('active');
-                
-                // Pokud jsme v sekci statistik, aktualizujeme grafy
+                hideCart();
                 if (targetSection === 'stats-section') {
                     Statistics.updateCharts();
                 }
@@ -171,46 +164,41 @@ const UI = (() => {
         
         // Tlačítko pro dokončení objednávky
         elements.checkoutBtn.addEventListener('click', () => {
-            // Pokud je košík prázdný, netvoříme účtenku
             if (Cart.getItemCount() === 0) {
                 alert('Košík je prázdný!');
                 return;
             }
-            
-            // Vytvoříme účtenku
+            hideCart();
             createReceipt();
         });
         
-        // Nastavení
+        // Nastavení - tmavý režim
         elements.darkModeToggle.addEventListener('change', () => {
             document.body.classList.toggle('dark-mode');
-            
-            // Uložíme nastavení
             const settings = Storage.loadSettings();
             settings.darkMode = elements.darkModeToggle.checked;
             Storage.saveSettings(settings);
         });
         
+        // Nastavení - výchozí měna
         elements.defaultCurrency.addEventListener('change', () => {
             const settings = Storage.loadSettings();
             settings.defaultCurrency = elements.defaultCurrency.value;
             Storage.saveSettings(settings);
-            
-            // Aktualizujeme zobrazovanou měnu
             elements.currencyToggle.checked = settings.defaultCurrency === 'eur';
             currentDisplayCurrency = settings.defaultCurrency;
             renderCart();
         });
         
+        // Nastavení - kurz
         elements.exchangeRate.addEventListener('change', () => {
             const settings = Storage.loadSettings();
             settings.exchangeRate = parseFloat(elements.exchangeRate.value);
             Storage.saveSettings(settings);
-            
-            // Aktualizujeme zobrazení ceny
             renderCart();
         });
         
+        // Reset dat
         elements.resetDataBtn.addEventListener('click', () => {
             if (confirm('Opravdu chcete vymazat všechna data? Tato akce je nevratná!')) {
                 Storage.clearAllData();
@@ -219,7 +207,7 @@ const UI = (() => {
             }
         });
         
-        // Modaly
+        // Modaly - zavření
         elements.closeModalBtns.forEach(btn => {
             btn.addEventListener('click', () => {
                 elements.receiptModal.style.display = 'none';
@@ -231,8 +219,8 @@ const UI = (() => {
             elements.receiptModal.style.display = 'none';
         });
         
+        // Tisk účtenky
         elements.printReceiptBtn.addEventListener('click', () => {
-            // Vytiskneme obsah účtenky
             const printWindow = window.open('', '_blank');
             printWindow.document.write('<html><head><title>Účtenka</title>');
             printWindow.document.write('<link rel="stylesheet" href="css/main.css">');
@@ -243,59 +231,45 @@ const UI = (() => {
             printWindow.print();
         });
         
+        // Uložení účtenky
         elements.saveReceiptBtn.addEventListener('click', () => {
-            // Uložíme obsah účtenky jako textový soubor
             const receiptText = elements.receiptContent.innerText;
             const blob = new Blob([receiptText], { type: 'text/plain' });
             const url = URL.createObjectURL(blob);
-            
             const a = document.createElement('a');
             a.href = url;
             a.download = `uctenka_${new Date().toISOString().replace(/:/g, '-')}.txt`;
             a.click();
-            
             URL.revokeObjectURL(url);
         });
         
-        // Speciální produkty
+        // City Tax výpočet
         elements.personsCount.addEventListener('input', updateCityTaxCalculation);
         elements.nightsCount.addEventListener('input', updateCityTaxCalculation);
         
+        // Přidání speciálního produktu
         elements.addSpecialProductBtn.addEventListener('click', () => {
             if (!selectedProduct) return;
             
             let customData = null;
             
-            // Pro City Tax
             if (selectedProduct.special === 'citytax') {
                 const persons = parseInt(elements.personsCount.value);
                 const nights = parseInt(elements.nightsCount.value);
                 const totalPrice = persons * nights * 2; // 2€ za osobu na noc
-                
-                customData = {
-                    persons,
-                    nights,
-                    price: totalPrice
-                };
+                customData = { persons, nights, price: totalPrice };
             }
             
-            // Pro Wellness balíček
             if (selectedProduct.special === 'wellness') {
                 const price = parseFloat(elements.wellnessPrice.value);
-                
-                customData = {
-                    price
-                };
+                customData = { price };
             }
             
-            // Přidáme produkt do košíku
             Cart.addItem(selectedProduct, 1, customData);
-            
-            // Zavřeme modal
             elements.productModal.style.display = 'none';
-            
-            // Aktualizujeme košík
             renderCart();
+            updateCartCount();
+            showCart();
         });
         
         elements.cancelSpecialProductBtn.addEventListener('click', () => {
@@ -310,14 +284,29 @@ const UI = (() => {
         elements.exportCsvBtn.addEventListener('click', () => {
             exportToCSV();
         });
+        
+        // Mobilní košík - tlačítka
+        elements.cartToggleBtn.addEventListener('click', () => {
+            toggleCart();
+        });
+        
+        elements.cartOverlay.addEventListener('click', () => {
+            hideCart();
+        });
+        
+        // Sledování přidání do košíku
+        elements.productContainer.addEventListener('click', (e) => {
+            const productCard = e.target.closest('.product-card');
+            if (productCard && !productCard.dataset.special) {
+                setTimeout(() => {
+                    updateCartCount();
+                }, 100);
+            }
+        });
     };
     
-    /**
-     * Renderuje produkty podle kategorie a vyhledávání
-     * @param {string} searchQuery - Vyhledávací dotaz
-     */
+    // Renderuje produkty podle kategorie a vyhledávání
     const renderProducts = (searchQuery = '') => {
-        // Získáme produkty
         let products;
         
         if (searchQuery) {
@@ -326,7 +315,6 @@ const UI = (() => {
             products = Inventory.getProductsByCategory(currentCategory);
         }
         
-        // Vyčistíme kontejner
         elements.productContainer.innerHTML = '';
         
         if (products.length === 0) {
@@ -334,20 +322,16 @@ const UI = (() => {
             return;
         }
         
-        // Získáme nastavení pro převod měn
         const settings = Storage.loadSettings();
         
-        // Vykreslíme každý produkt
         products.forEach(product => {
             const productCard = document.createElement('div');
             productCard.className = 'product-card';
             
-            // Označíme speciální produkty pro mobilní zpracování
             if (product.special) {
                 productCard.dataset.special = product.special;
             }
             
-            // Zobrazíme cenu ve správné měně
             let displayPrice;
             let displayCurrency;
             
@@ -366,17 +350,13 @@ const UI = (() => {
             
             let priceHtml = Inventory.formatPrice(displayPrice, displayCurrency);
             
-            // Pro speciální produkty upravíme zobrazení ceny
             if (product.special === 'wellness') {
                 priceHtml = 'Vlastní cena';
             } else if (product.special === 'citytax') {
                 priceHtml = '2 € / os. / noc';
             }
             
-            // U cen přidáme třídu podle měny
             const currencyClass = displayCurrency === 'czk' ? 'currency-czk' : 'currency-eur';
-            
-            // Fallback obrázek, pokud není k dispozici
             const imgSrc = `${product.image}`;
             
             productCard.innerHTML = `
@@ -387,23 +367,18 @@ const UI = (() => {
                 </div>
             `;
             
-            // Přidáme event listener pro přidání do košíku
             productCard.addEventListener('click', () => {
-                // Pro speciální produkty otevřeme modal
                 if (product.special) {
                     openProductModal(product);
                 } else {
-                    // Animace přidání do košíku
                     productCard.classList.add('adding');
                     setTimeout(() => {
                         productCard.classList.remove('adding');
                     }, 500);
                     
-                    // Přidáme do košíku
                     Cart.addItem(product);
                     renderCart();
                     
-                    // Na mobilním zařízení zobrazíme košík po přidání položky
                     if (window.innerWidth <= 768) {
                         showCart();
                     }
@@ -414,31 +389,24 @@ const UI = (() => {
         });
     };
     
-    /**
-     * Renderuje košík
-     */
+    // Renderuje košík
     const renderCart = () => {
         const items = Cart.getItems();
         
-        // Vyčistíme kontejner
         elements.cartItems.innerHTML = '';
         
-        // Pokud je košík prázdný, zobrazíme zprávu
         if (items.length === 0) {
             elements.cartItems.innerHTML = '<div class="empty-cart-message">Košík je prázdný</div>';
             elements.subtotalAmount.textContent = '0 Kč';
             return;
         }
         
-        // Získáme nastavení pro převod měn
         const settings = Storage.loadSettings();
         
-        // Vykreslíme každou položku košíku
         items.forEach(item => {
             const cartItem = document.createElement('div');
             cartItem.className = 'cart-item';
             
-            // Zobrazíme cenu ve správné měně
             let displayPrice;
             let displayCurrency;
             
@@ -455,10 +423,7 @@ const UI = (() => {
                 displayCurrency = currentDisplayCurrency;
             }
             
-            // Spočítáme celkovou cenu položky
             const totalPrice = displayPrice * item.quantity;
-            
-            // Vytvoříme speciální text pro položky se speciálními daty
             let specialText = '';
             
             if (item.customData) {
@@ -484,7 +449,6 @@ const UI = (() => {
                 </div>
             `;
             
-            // Přidáme event listenery pro tlačítka
             const decreaseBtn = cartItem.querySelector('.quantity-decrease');
             const increaseBtn = cartItem.querySelector('.quantity-increase');
             const removeBtn = cartItem.querySelector('.remove-item');
@@ -510,23 +474,17 @@ const UI = (() => {
             elements.cartItems.appendChild(cartItem);
         });
         
-        // Aktualizujeme mezisoučet
         const totalPrice = Cart.getTotalPrice(currentDisplayCurrency, settings.exchangeRate);
         elements.subtotalAmount.textContent = Inventory.formatPrice(totalPrice, currentDisplayCurrency);
-        
-        // Aktualizujeme počítadlo košíku
         updateCartCount();
     };
     
-    /**
-     * Aktualizuje počítadlo položek v košíku
-     */
+    // Aktualizuje počítadlo položek v košíku
     const updateCartCount = () => {
         const count = Cart.getItemCount();
         if (elements.cartCount) {
             elements.cartCount.textContent = count;
             
-            // Skryjeme počítadlo, pokud je prázdné
             if (count === 0) {
                 elements.cartCount.style.display = 'none';
             } else {
@@ -535,27 +493,21 @@ const UI = (() => {
         }
     };
     
-    /**
-     * Zobrazí košík na mobilních zařízeních
-     */
+    // Zobrazí košík na mobilních zařízeních
     const showCart = () => {
         elements.cartPanel.classList.add('show');
         elements.cartOverlay.classList.add('show');
-        document.body.style.overflow = 'hidden'; // Zabraňuje scrollování pozadí
+        document.body.style.overflow = 'hidden';
     };
     
-    /**
-     * Skryje košík na mobilních zařízeních
-     */
+    // Skryje košík na mobilních zařízeních
     const hideCart = () => {
         elements.cartPanel.classList.remove('show');
         elements.cartOverlay.classList.remove('show');
-        document.body.style.overflow = ''; // Obnoví scrollování
+        document.body.style.overflow = '';
     };
     
-    /**
-     * Přepíná zobrazení košíku na mobilních zařízeních
-     */
+    // Přepíná zobrazení košíku na mobilních zařízeních
     const toggleCart = () => {
         if (elements.cartPanel.classList.contains('show')) {
             hideCart();
@@ -564,21 +516,13 @@ const UI = (() => {
         }
     };
     
-    /**
-     * Otevře modální okno pro speciální produkt
-     * @param {Object} product - Produkt
-     */
+    // Otevře modální okno pro speciální produkt
     const openProductModal = (product) => {
         selectedProduct = product;
-        
-        // Nastavíme titulek
         elements.productModalTitle.textContent = product.name;
-        
-        // Skryjeme všechny bloky pro speciální vstupy
         elements.cityTaxInputs.style.display = 'none';
         elements.wellnessInputs.style.display = 'none';
         
-        // Zobrazíme správný blok podle typu produktu
         if (product.special === 'citytax') {
             elements.cityTaxInputs.style.display = 'block';
             updateCityTaxCalculation();
@@ -586,79 +530,45 @@ const UI = (() => {
             elements.wellnessInputs.style.display = 'block';
         }
         
-        // Zobrazíme modální okno
         elements.productModal.style.display = 'block';
     };
     
-    /**
-     * Aktualizuje výpočet City Tax
-     */
+    // Aktualizuje výpočet City Tax
     const updateCityTaxCalculation = () => {
         const persons = parseInt(elements.personsCount.value) || 1;
         const nights = parseInt(elements.nightsCount.value) || 1;
-        const totalPrice = persons * nights * 2; // 2€ za osobu na noc
-        
+        const totalPrice = persons * nights * 2;
         elements.cityTaxResult.textContent = `Celkem: ${totalPrice} €`;
     };
     
-    /**
-     * Vytvoří účtenku
-     */
+    // Vytvoří účtenku
     const createReceipt = () => {
-        // Získáme data pro účtenku
         const receiptData = Cart.getReceiptData(elements.locationSelect.value);
-        
-        // Vytvoříme HTML pro účtenku
         const receiptHtml = generateReceiptHtml(receiptData);
-        
-        // Zobrazíme účtenku
         elements.receiptContent.innerHTML = receiptHtml;
         elements.receiptModal.style.display = 'block';
-        
-        // Uložíme prodej do statistik
         Statistics.recordSale(receiptData);
-        
-        // Vyčistíme košík
         Cart.clearCart();
-        
-        // Aktualizujeme košík
         renderCart();
     };
     
-    /**
-     * Generuje HTML pro účtenku
-     * @param {Object} data - Data pro účtenku
-     * @returns {string} - HTML účtenky
-     */
+    // Generuje HTML pro účtenku
     const generateReceiptHtml = (data) => {
         const { items, location, totalCZK, totalEUR, timestamp, exchangeRate } = data;
-        
-        // Najdeme název lokace
         const locationName = Inventory.getLocations().find(loc => loc.id === location)?.name || location;
-        
-        // Formátujeme datum
-        const dateOptions = { 
-            day: '2-digit', 
-            month: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        };
+        const dateOptions = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
         const formattedDate = new Date(timestamp).toLocaleDateString('cs-CZ', dateOptions);
         
-        // Generujeme řádky položek
         let itemsHtml = '';
         items.forEach(item => {
             let specialInfo = '';
             
-            // Pro speciální produkty přidáme info
             if (item.customData) {
                 if (item.product.special === 'citytax') {
                     specialInfo = ` (${item.customData.persons} osob × ${item.customData.nights} nocí)`;
                 }
             }
             
-            // Formátujeme cenu
             const formattedPrice = Inventory.formatPrice(item.price, item.currency);
             const totalItemPrice = Inventory.formatPrice(item.price * item.quantity, item.currency);
             
@@ -672,7 +582,6 @@ const UI = (() => {
             `;
         });
         
-        // Generujeme kompletní HTML účtenky
         return `
             <div class="receipt">
                 <div class="receipt-header">
@@ -710,9 +619,7 @@ const UI = (() => {
         `;
     };
     
-    /**
-     * Exportuje statistiky do CSV
-     */
+    // Exportuje statistiky do CSV
     const exportToCSV = () => {
         const sales = Storage.loadSales();
         
@@ -721,10 +628,8 @@ const UI = (() => {
             return;
         }
         
-        // Vytvoříme hlavičku CSV
         let csv = 'Datum,Lokace,Celkem CZK,Celkem EUR,Počet položek\n';
         
-        // Přidáme řádky
         sales.forEach(sale => {
             const date = new Date(sale.timestamp).toLocaleDateString('cs-CZ');
             const locationName = Inventory.getLocations().find(loc => loc.id === sale.location)?.name || sale.location;
@@ -732,7 +637,6 @@ const UI = (() => {
             csv += `${date},${locationName},${sale.totalCZK.toFixed(0)},${sale.totalEUR.toFixed(2)},${sale.items.length}\n`;
         });
         
-        // Vytvoříme soubor a stáhneme ho
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
         
