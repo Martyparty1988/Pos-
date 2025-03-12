@@ -11,6 +11,7 @@ const CACHE_VERSION = 'villa-pos-v1';
 const CACHE_FILES = [
     '/',
     '/index.html',
+    '/manifest.json',
     '/css/main.css',
     '/css/components.css',
     '/css/animations.css',
@@ -21,6 +22,14 @@ const CACHE_FILES = [
     '/js/storage.js',
     '/js/ui.js',
     '/images/placeholder.png',
+    '/images/icons/icon-72x72.png',
+    '/images/icons/icon-96x96.png',
+    '/images/icons/icon-128x128.png',
+    '/images/icons/icon-144x144.png',
+    '/images/icons/icon-152x152.png',
+    '/images/icons/icon-192x192.png',
+    '/images/icons/icon-384x384.png',
+    '/images/icons/icon-512x512.png',
     // Přidejte sem všechny obrázky produktů
     '/images/cocacola.png',
     '/images/fanta.png',
