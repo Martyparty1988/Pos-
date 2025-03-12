@@ -1,0 +1,131 @@
+/* Lokace s barevným pozadím */
+.location-header {
+    padding: 15px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-fast);
+}
+
+/* Styl účtenky */
+.receipt {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 100%;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.receipt-header {
+    padding: 20px;
+    border-radius: var(--border-radius-md) var(--border-radius-md) 0 0;
+    margin-bottom: 15px;
+}
+
+.receipt-header h3 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.receipt-header p {
+    font-size: 1.2rem;
+    margin: 5px 0;
+}
+
+.receipt-items {
+    margin: 25px 0;
+}
+
+.receipt-items table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 auto;
+    font-size: 1.1rem;
+}
+
+.receipt-items th {
+    background-color: #f8f8f8;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 2px solid #eee;
+}
+
+.receipt-items td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.receipt-summary {
+    margin: 25px 0;
+    font-size: 1.2rem;
+    padding: 20px;
+    background-color: #f8f8f8;
+    border-radius: var(--border-radius-md);
+}
+
+.receipt-summary p {
+    margin: 8px 0;
+    font-weight: 500;
+}
+
+.receipt-summary p:last-child {
+    font-size: 0.9rem;
+    color: #777;
+    margin-top: 15px;
+}
+
+.receipt-footer {
+    margin-top: 25px;
+    padding: 15px;
+    font-size: 1.2rem;
+    font-style: italic;
+    color: #555;
+}
+
+/* Responzivní design pro účtenku na mobilních zařízeních */
+@media (max-width: 768px) {
+    .receipt-header h3 {
+        font-size: 1.5rem;
+    }
+    
+    .receipt-header p, 
+    .receipt-summary p, 
+    .receipt-footer p {
+        font-size: 1.1rem;
+    }
+    
+    .receipt-items table {
+        font-size: 1rem;
+    }
+    
+    .receipt-items th, 
+    .receipt-items td {
+        padding: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .receipt-items table {
+        font-size: 0.9rem;
+    }
+    
+    .receipt-items th, 
+    .receipt-items td {
+        padding: 8px 5px;
+    }
+    
+    .receipt-header h3 {
+        font-size: 1.3rem;
+    }
+    
+    .receipt-header p, 
+    .receipt-summary p, 
+    .receipt-footer p {
+        font-size: 1rem;
+    }
+}
