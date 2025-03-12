@@ -1,118 +1,126 @@
-// Název cache úložiště pro aplikaci
-const CACHE_NAME = 'villa-pos-v1';
+/**
+ * Service Worker pro Villa POS Systém
+ * 
+ * Poskytuje offline podporu pomocí cachování souborů
+ */
 
-// Soubory, které chceme cachovat pro offline použití
-const filesToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/inventory.js',
-  '/manifest.json',
-  // Obrázky
-  '/images/cola.png',
-  '/images/sprite.png',
-  '/images/fanta.png',
-  '/images/redbull.png',
-  '/images/malibu.png',
-  '/images/jack.png',
-  '/images/moscow.png',
-  '/images/gin.png',
-  '/images/mojito.png',
-  '/images/prosecco.png',
-  '/images/budvar.png',
-  '/images/30keg.png',
-  '/images/50keg.png',
-  '/images/wellness.png',
-  '/images/grill.png',
-  '/images/Plyn.png',
-  // Ikony
-  '/images/icon-192.png',
-  '/images/icon-512.png',
-  // Fallback obrázek
-  '/images/placeholder.jpg'
+// Verze cache, zvýšit při aktualizaci
+const CACHE_VERSION = 'villa-pos-v1';
+
+// Soubory k cachování
+const CACHE_FILES = [
+    '/',
+    '/index.html',
+    '/css/main.css',
+    '/css/components.css',
+    '/css/animations.css',
+    '/js/app.js',
+    '/js/cart.js',
+    '/js/inventory.js',
+    '/js/statistics.js',
+    '/js/storage.js',
+    '/js/ui.js',
+    '/images/placeholder.png',
+    // Přidejte sem všechny obrázky produktů
+    '/images/cocacola.png',
+    '/images/fanta.png',
+    '/images/sprite.png',
+    '/images/redbull.png',
+    '/images/malibu.png',
+    '/images/jackcola.png',
+    '/images/moscowmule.png',
+    '/images/gintonic.png',
+    '/images/mojito.png',
+    '/images/prosecco.png',
+    '/images/budvar.png',
+    '/images/sud30.png',
+    '/images/sud50.png',
+    '/images/wellness.png',
+    '/images/plyny.png',
+    '/images/citytax.png',
+    // Externí závislosti
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
+    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js'
 ];
 
-// Instalace Service Workeru
+// Nainstalování Service Workeru
 self.addEventListener('install', event => {
-  console.log('Service Worker: Instalace');
-  
-  // Přednostní aktivace tohoto service workeru
-  self.skipWaiting();
-  
-  // Cachování souborů
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Service Worker: Otevření cache');
-        return cache.addAll(filesToCache);
-      })
-      .catch(error => {
-        console.error('Service Worker: Chyba při cachování souborů', error);
-      })
-  );
+    event.waitUntil(
+        caches.open(CACHE_VERSION)
+            .then(cache => {
+                console.log('Cache otevřena');
+                return cache.addAll(CACHE_FILES);
+            })
+            .then(() => {
+                // Aktivujeme ihned bez čekání na uzavření stávajících stránek
+                return self.skipWaiting();
+            })
+    );
 });
 
 // Aktivace Service Workeru
 self.addEventListener('activate', event => {
-  console.log('Service Worker: Aktivace');
-  
-  // Odstranění starých cache
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Service Worker: Odstraňuji starou cache', cacheName);
-            return caches.delete(cacheName);
-          }
+    event.waitUntil(
+        caches.keys().then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    // Odstraníme staré cache
+                    if (cacheName !== CACHE_VERSION) {
+                        console.log('Odstraňování staré cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
+        }).then(() => {
+            // Zajistíme, že Service Worker přebere kontrolu ihned
+            return self.clients.claim();
         })
-      );
-    })
-  );
-  
-  // Převzetí kontroly nad všemi klienty
-  return self.clients.claim();
+    );
 });
 
-// Zachycení požadavků fetch
+// Obsluha požadavků
 self.addEventListener('fetch', event => {
-  // Strategie Cache-First: nejprve zkusíme z cache, pak teprve ze sítě
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Vrácení souboru z cache, pokud existuje
-        if (response) {
-          return response;
-        }
-        
-        // Pokud není v cache, stáhneme ze sítě
-        return fetch(event.request)
-          .then(response => {
-            // Vrátíme originální odpověď, pokud není platná
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
-            
-            // Zkopírujeme odpověď - odpověď lze použít jen jednou
-            const responseToCache = response.clone();
-            
-            // Pokusíme se přidat odpověď do cache pro příští použití
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-            
-            return response;
-          })
-          .catch(error => {
-            console.error('Service Worker: Chyba při fetchování', error);
-            
-            // Pokud je požadavek na HTML stránku a selhal, vrátíme offline stránku
-            if (event.request.headers.get('accept').includes('text/html')) {
-              return caches.match('/index.html');
-            }
-          });
-      })
-  );
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Pokud máme odpověď v cache, vrátíme ji
+                if (response) {
+                    return response;
+                }
+                
+                // Jinak stáhneme ze sítě
+                return fetch(event.request).then(response => {
+                    // Kontrola, zda je odpověď validní
+                    if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    
+                    // Pokud je to obrázek nebo jiný statický soubor, můžeme ho cachovat
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && (
+                        contentType.includes('image') || 
+                        contentType.includes('text/css') || 
+                        contentType.includes('javascript')
+                    )) {
+                        // Cachujeme kopii odpovědi
+                        const responseToCache = response.clone();
+                        
+                        caches.open(CACHE_VERSION)
+                            .then(cache => {
+                                cache.put(event.request, responseToCache);
+                            });
+                    }
+                    
+                    return response;
+                });
+            })
+            .catch(error => {
+                // Pokud je požadavek na obrázek a selže, můžeme vrátit placeholder
+                if (event.request.url.match(/\.(jpg|jpeg|png|gif|svg)$/)) {
+                    return caches.match('/images/placeholder.png');
+                }
+                
+                console.error('Chyba při načítání:', error);
+            })
+    );
 });
