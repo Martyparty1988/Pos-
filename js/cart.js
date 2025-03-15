@@ -1,190 +1,239 @@
 /**
- * Cart.js - Modul pro správu košíku
- * 
- * Tento modul poskytuje funkce pro správu košíku,
- * včetně přidávání, odebírání a aktualizace položek.
+ * Třída pro správu košíku
  */
-
-const Cart = (() => {
-    // Instance košíku, načtená z localStorage
-    let cartItems = [];
-    
-    /**
-     * Inicializuje košík
-     */
-    const init = () => {
-        cartItems = Storage.loadCart();
-    };
-    
-    /**
-     * Přidá položku do košíku
-     * @param {Object} product - Produkt k přidání
-     * @param {number} quantity - Množství (výchozí: 1)
-     * @param {Object} customData - Vlastní data pro speciální produkty
-     * @returns {Object} - Přidaná položka košíku
-     */
-    const addItem = (product, quantity = 1, customData = null) => {
-        // Kontrola, zda produkt již v košíku existuje
-        const existingItemIndex = cartItems.findIndex(item => {
-            // Pro speciální produkty porovnáváme i vlastní data
-            if (product.special && customData) {
-                return item.product.id === product.id && 
-                       JSON.stringify(item.customData) === JSON.stringify(customData);
-            }
-            return item.product.id === product.id;
-        });
+class Cart {
+    constructor(storage, ui) {
+        this.storage = storage;
+        this.ui = ui;
+        this.items = [];
+        this.taxRate = 0.21; // 21% DPH
         
-        // Když položka již existuje, zvýšíme množství
-        if (existingItemIndex !== -1) {
-            cartItems[existingItemIndex].quantity += quantity;
-            
-            // Pokud jde o speciální produkt s vlastní cenou, aktualizujeme ji
-            if (customData && customData.price) {
-                cartItems[existingItemIndex].customData = customData;
-                cartItems[existingItemIndex].price = customData.price;
-            }
-            
-            saveCart();
-            return cartItems[existingItemIndex];
+        // Načtení uložených položek v košíku
+        this.loadCart();
+    }
+    
+    /**
+     * Načtení košíku z localStorage
+     */
+    loadCart() {
+        this.items = this.storage.getCart();
+        this.updateUI();
+    }
+    
+    /**
+     * Uložení košíku do localStorage
+     */
+    saveCart() {
+        this.storage.saveCart(this.items);
+    }
+    
+    /**
+     * Aktualizace UI košíku
+     */
+    updateUI() {
+        this.ui.renderCart(this.items);
+        this.calculateTotals();
+        
+        // Aktivace/deaktivace tlačítek objednávky
+        const checkoutButton = document.getElementById('checkout-button');
+        const saveOrderButton = document.getElementById('save-order-button');
+        
+        if (this.items.length > 0) {
+            checkoutButton.disabled = false;
+            saveOrderButton.disabled = false;
+        } else {
+            checkoutButton.disabled = true;
+            saveOrderButton.disabled = true;
         }
-        
-        // Jinak vytvoříme novou položku
-        let price = product.price;
-        
-        // Pro speciální produkty s vlastní cenou
-        if (customData && customData.price !== undefined) {
-            price = customData.price;
-        }
-        
-        const newItem = {
-            id: `${product.id}_${Date.now()}`,
-            product: product,
-            quantity: quantity,
-            price: price,
-            currency: product.currency,
-            customData: customData
-        };
-        
-        cartItems.push(newItem);
-        saveCart();
-        return newItem;
-    };
+    }
     
     /**
-     * Aktualizuje množství položky v košíku
-     * @param {string} itemId - ID položky košíku
-     * @param {number} quantity - Nové množství
-     * @returns {boolean} - Úspěch operace
+     * Výpočet celkových částek
      */
-    const updateItemQuantity = (itemId, quantity) => {
-        const index = cartItems.findIndex(item => item.id === itemId);
-        if (index === -1) return false;
-        
-        if (quantity <= 0) {
-            // Pokud je množství 0 nebo méně, položku odstraníme
-            return removeItem(itemId);
-        }
-        
-        cartItems[index].quantity = quantity;
-        saveCart();
-        return true;
-    };
-    
-    /**
-     * Odstraní položku z košíku
-     * @param {string} itemId - ID položky košíku
-     * @returns {boolean} - Úspěch operace
-     */
-    const removeItem = (itemId) => {
-        const initialLength = cartItems.length;
-        cartItems = cartItems.filter(item => item.id !== itemId);
-        
-        if (cartItems.length !== initialLength) {
-            saveCart();
-            return true;
-        }
-        return false;
-    };
-    
-    /**
-     * Vyčistí celý košík
-     */
-    const clearCart = () => {
-        cartItems = [];
-        saveCart();
-    };
-    
-    /**
-     * Získá všechny položky v košíku
-     * @returns {Array} - Položky košíku
-     */
-    const getItems = () => {
-        return [...cartItems];
-    };
-    
-    /**
-     * Vypočte celkovou cenu košíku
-     * @param {string} targetCurrency - Měna, ve které chceme celkovou cenu
-     * @param {number} exchangeRate - Směnný kurz pro převod
-     * @returns {number} - Celková cena košíku
-     */
-    const getTotalPrice = (targetCurrency, exchangeRate) => {
-        return cartItems.reduce((total, item) => {
-            // Převedeme cenu na cílovou měnu
-            const priceInTargetCurrency = Inventory.convertCurrency(
-                item.price, 
-                item.currency, 
-                targetCurrency, 
-                exchangeRate
-            );
-            
-            return total + (priceInTargetCurrency * item.quantity);
+    calculateTotals() {
+        const subtotal = this.items.reduce((total, item) => {
+            return total + (item.price * item.quantity);
         }, 0);
-    };
-    
-    /**
-     * Získá počet položek v košíku
-     * @returns {number} - Počet položek
-     */
-    const getItemCount = () => {
-        return cartItems.reduce((count, item) => count + item.quantity, 0);
-    };
-    
-    /**
-     * Získá data pro vytvoření účtenky
-     * @param {string} location - Aktuální lokace
-     * @returns {Object} - Data pro účtenku
-     */
-    const getReceiptData = (location) => {
-        const settings = Storage.loadSettings();
         
-        // Získáme všechny informace potřebné pro účtenku
-        return {
-            items: cartItems,
-            location: location,
-            totalCZK: getTotalPrice('czk', settings.exchangeRate),
-            totalEUR: getTotalPrice('eur', settings.exchangeRate),
-            timestamp: new Date(),
-            exchangeRate: settings.exchangeRate
-        };
-    };
+        const tax = subtotal * this.taxRate;
+        const total = subtotal + tax;
+        
+        // Aktualizace zobrazení částek
+        document.getElementById('cart-subtotal').textContent = `${subtotal.toFixed(0)} Kč`;
+        document.getElementById('cart-tax').textContent = `${tax.toFixed(0)} Kč`;
+        document.getElementById('cart-total').textContent = `${total.toFixed(0)} Kč`;
+        
+        return { subtotal, tax, total };
+    }
     
     /**
-     * Uloží aktuální stav košíku do localStorage
+     * Přidání položky do košíku
      */
-    const saveCart = () => {
-        Storage.saveCart(cartItems);
-    };
+    addItem(itemId, quantity = 1) {
+        const allItems = this.storage.getItems();
+        const itemToAdd = allItems.find(item => item.id === itemId);
+        
+        if (!itemToAdd) {
+            console.error(`Položka s ID ${itemId} nebyla nalezena`);
+            return;
+        }
+        
+        // Kontrola, zda položka je dostupná
+        if (!itemToAdd.available) {
+            this.ui.showNotification('Tato položka není momentálně dostupná', 'error');
+            return;
+        }
+        
+        // Kontrola, zda položka už je v košíku
+        const existingItemIndex = this.items.findIndex(item => item.id === itemId);
+        
+        if (existingItemIndex !== -1) {
+            // Položka už je v košíku, zvýšíme množství
+            this.items[existingItemIndex].quantity += quantity;
+        } else {
+            // Přidáme novou položku do košíku
+            this.items.push({
+                id: itemToAdd.id,
+                name: itemToAdd.name,
+                price: itemToAdd.price,
+                quantity: quantity,
+                isNew: true // Pro animaci
+            });
+        }
+        
+        // Uložení košíku a aktualizace UI
+        this.saveCart();
+        this.updateUI();
+        
+        // Animace přidání do košíku
+        this.ui.animateAddToCart(itemId);
+        
+        // Oznámení o přidání položky
+        this.ui.showNotification(`${itemToAdd.name} přidáno do košíku`, 'success');
+        
+        // Odstranění flagu isNew po chvíli pro příští animaci
+        setTimeout(() => {
+            this.items.forEach(item => {
+                item.isNew = false;
+            });
+            this.saveCart();
+        }, 500);
+    }
     
-    return {
-        init,
-        addItem,
-        updateItemQuantity,
-        removeItem,
-        clearCart,
-        getItems,
-        getTotalPrice,
-        getItemCount,
-        getReceiptData
-    };
-})();
+    /**
+     * Změna množství položky v košíku
+     */
+    updateQuantity(itemId, quantity) {
+        const itemIndex = this.items.findIndex(item => item.id === itemId);
+        
+        if (itemIndex === -1) {
+            console.error(`Položka s ID ${itemId} nebyla v košíku nalezena`);
+            return;
+        }
+        
+        // Pokud je množství 0 nebo méně, položku odstraníme
+        if (quantity <= 0) {
+            this.removeItem(itemId);
+            return;
+        }
+        
+        // Jinak aktualizujeme množství
+        this.items[itemIndex].quantity = quantity;
+        
+        // Uložení košíku a aktualizace UI
+        this.saveCart();
+        this.updateUI();
+    }
+    
+    /**
+     * Odstranění položky z košíku
+     */
+    removeItem(itemId) {
+        this.items = this.items.filter(item => item.id !== itemId);
+        
+        // Uložení košíku a aktualizace UI
+        this.saveCart();
+        this.updateUI();
+    }
+    
+    /**
+     * Vymazání celého košíku
+     */
+    clearCart() {
+        this.items = [];
+        
+        // Uložení košíku a aktualizace UI
+        this.saveCart();
+        this.updateUI();
+    }
+    
+    /**
+     * Uložení objednávky k pozdějšímu dokončení
+     */
+    saveOrder() {
+        if (this.items.length === 0) {
+            this.ui.showNotification('Košík je prázdný', 'error');
+            return;
+        }
+        
+        const order = {
+            id: `order-${Date.now()}`,
+            items: [...this.items],
+            timestamp: Date.now(),
+            status: 'saved',
+            totals: this.calculateTotals()
+        };
+        
+        this.storage.saveOrder(order);
+        this.clearCart();
+    }
+    
+    /**
+     * Dokončení objednávky
+     */
+    completeOrder(orderDetails) {
+        if (this.items.length === 0) {
+            this.ui.showNotification('Košík je prázdný', 'error');
+            return;
+        }
+        
+        const order = {
+            id: `order-${Date.now()}`,
+            items: [...this.items],
+            timestamp: Date.now(),
+            status: 'completed',
+            totals: this.calculateTotals(),
+            customer: orderDetails
+        };
+        
+        // Uložení objednávky do historie
+        this.storage.saveOrder(order);
+        
+        // Přidání položek do statistik
+        this.storage.addToStatistics(order);
+        
+        // Vymazání košíku
+        this.clearCart();
+    }
+    
+    /**
+     * Získání uložené objednávky
+     */
+    loadSavedOrder(orderId) {
+        const savedOrder = this.storage.getOrderById(orderId);
+        
+        if (!savedOrder) {
+            this.ui.showNotification('Objednávka nebyla nalezena', 'error');
+            return;
+        }
+        
+        // Nahrazení košíku položkami z uložené objednávky
+        this.items = [...savedOrder.items];
+        
+        // Uložení košíku a aktualizace UI
+        this.saveCart();
+        this.updateUI();
+        
+        this.ui.showNotification('Objednávka byla načtena', 'success');
+    }
+}
