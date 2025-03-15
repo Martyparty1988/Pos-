@@ -1,296 +1,306 @@
 /**
- * Inventory.js - Modul pro správu inventáře
- * 
- * Tento modul obsahuje definice všech produktů a kategorie,
- * které jsou dostupné v rámci POS systému.
+ * Třída pro správu inventáře a položek
  */
-
-const Inventory = (() => {
-    // Definice produktů - hardcoded pro offline použití
-    const products = [
-        // Nealko nápoje
-        {
-            id: 'cocacola',
-            name: 'Coca-Cola',
-            price: 32,
-            currency: 'czk',
-            category: 'nealko',
-            image: 'images/cocacola.png'
-        },
-        {
-            id: 'fanta',
-            name: 'Fanta',
-            price: 32,
-            currency: 'czk',
-            category: 'nealko',
-            image: 'images/fanta.png'
-        },
-        {
-            id: 'sprite',
-            name: 'Sprite',
-            price: 32,
-            currency: 'czk',
-            category: 'nealko',
-            image: 'images/sprite.png'
-        },
-        {
-            id: 'redbull',
-            name: 'Red Bull',
-            price: 59,
-            currency: 'czk',
-            category: 'nealko',
-            image: 'images/redbull.png'
-        },
-        
-        // Alkoholické nápoje
-        {
-            id: 'malibu',
-            name: 'Malibu',
-            price: 99,
-            currency: 'czk',
-            category: 'alkohol',
-            image: 'images/malibu.png'
-        },
-        {
-            id: 'jackcola',
-            name: 'Jack s colou',
-            price: 99,
-            currency: 'czk',
-            category: 'alkohol',
-            image: 'images/jackcola.png'
-        },
-        {
-            id: 'moscowmule',
-            name: 'Moscow Mule',
-            price: 99,
-            currency: 'czk',
-            category: 'alkohol',
-            image: 'images/moscowmule.png'
-        },
-        {
-            id: 'gintonic',
-            name: 'Gin-Tonic',
-            price: 99,
-            currency: 'czk',
-            category: 'alkohol',
-            image: 'images/gintonic.png'
-        },
-        {
-            id: 'mojito',
-            name: 'Mojito',
-            price: 99,
-            currency: 'czk',
-            category: 'alkohol',
-            image: 'images/mojito.png'
-        },
-        {
-            id: 'prosecco',
-            name: 'Prosecco',
-            price: 390,
-            currency: 'czk',
-            category: 'alkohol',
-            image: 'images/prosecco.png'
-        },
-        
-        // Piva
-        {
-            id: 'budvar',
-            name: 'Budvar',
-            price: 59,
-            currency: 'czk',
-            category: 'pivo',
-            image: 'images/budvar.png'
-        },
-        {
-            id: 'sud30',
-            name: 'Sud 30l',
-            price: 125,
-            currency: 'eur',
-            category: 'pivo',
-            image: 'images/sud30.png'
-        },
-        {
-            id: 'sud50',
-            name: 'Sud 50l',
-            price: 175,
-            currency: 'eur',
-            category: 'pivo',
-            image: 'images/sud50.png'
-        },
-        
-        // Relaxační služby
-        {
-            id: 'wellness',
-            name: 'Wellness balíček',
-            price: 0,
-            currency: 'eur',
-            category: 'relax',
-            image: 'images/wellness.png',
-            special: 'wellness'
-        },
-        {
-            id: 'plyny',
-            name: 'Plyny do ohňových stolů',
-            price: 12,
-            currency: 'eur',
-            category: 'relax',
-            image: 'images/plyny.png'
-        },
-        {
-            id: 'citytax',
-            name: 'City Tax',
-            price: 0,
-            currency: 'eur',
-            category: 'relax',
-            image: 'images/citytax.png',
-            special: 'citytax'
-        }
-    ];
-
-    // Kategorie produktů
-    const categories = [
-        {
-            id: 'all',
-            name: 'Vše'
-        },
-        {
-            id: 'nealko',
-            name: 'Nealko'
-        },
-        {
-            id: 'alkohol',
-            name: 'Alkohol'
-        },
-        {
-            id: 'pivo',
-            name: 'Pivo'
-        },
-        {
-            id: 'relax',
-            name: 'Relax'
-        }
-    ];
-
-    // Lokace
-    const locations = [
-        {
-            id: 'ohyeah',
-            name: 'Oh Yeah'
-        },
-        {
-            id: 'amazingpool',
-            name: 'Amazing Pool'
-        },
-        {
-            id: 'littlecastle',
-            name: 'Little Castle'
-        }
-    ];
-
+class Inventory {
+    constructor(storage, ui, cart) {
+        this.storage = storage;
+        this.ui = ui;
+        this.cart = cart;
+        this.items = [];
+        this.filteredItems = [];
+        this.currentCategory = 'all';
+        this.currentSearchQuery = '';
+        this.filters = {
+            availability: 'all',
+            maxPrice: 10000
+        };
+    }
+    
     /**
-     * Získá všechny produkty
-     * @returns {Array} - Seznam všech produktů
+     * Načtení položek z úložiště
      */
-    const getAllProducts = () => {
-        return products;
-    };
-
+    loadItems() {
+        this.items = this.storage.getItems();
+        this.filteredItems = [...this.items];
+        return this.items;
+    }
+    
     /**
-     * Získá produkt podle ID
-     * @param {string} id - ID produktu
-     * @returns {Object|null} - Produkt nebo null
+     * Zobrazení položek v UI
      */
-    const getProductById = (id) => {
-        return products.find(product => product.id === id) || null;
-    };
-
-    /**
-     * Filtruje produkty podle kategorie
-     * @param {string} categoryId - ID kategorie, 'all' pro všechny produkty
-     * @returns {Array} - Filtrovaný seznam produktů
-     */
-    const getProductsByCategory = (categoryId) => {
-        if (categoryId === 'all') {
-            return products;
-        }
-        return products.filter(product => product.category === categoryId);
-    };
-
-    /**
-     * Vyhledá produkty podle názvu
-     * @param {string} query - Vyhledávací dotaz
-     * @returns {Array} - Filtrovaný seznam produktů odpovídajících dotazu
-     */
-    const searchProducts = (query) => {
-        const searchLower = query.toLowerCase();
-        return products.filter(product => 
-            product.name.toLowerCase().includes(searchLower) || 
-            product.category.toLowerCase().includes(searchLower)
-        );
-    };
-
-    /**
-     * Získá všechny kategorie
-     * @returns {Array} - Seznam všech kategorií
-     */
-    const getCategories = () => {
-        return categories;
-    };
-
-    /**
-     * Získá všechny lokace
-     * @returns {Array} - Seznam všech lokací
-     */
-    const getLocations = () => {
-        return locations;
-    };
-
-    /**
-     * Převede cenu produktu na jinou měnu
-     * @param {number} price - Cena produktu
-     * @param {string} fromCurrency - Původní měna
-     * @param {string} toCurrency - Cílová měna
-     * @param {number} exchangeRate - Směnný kurz EUR/CZK
-     * @returns {number} - Přepočtená cena
-     */
-    const convertCurrency = (price, fromCurrency, toCurrency, exchangeRate) => {
-        if (fromCurrency === toCurrency) {
-            return price;
+    displayItems() {
+        const items = this.loadItems();
+        if (items.length === 0) {
+            this.addSampleItems();
+            this.loadItems();
         }
         
-        if (fromCurrency === 'czk' && toCurrency === 'eur') {
-            return +(price / exchangeRate).toFixed(2);
-        }
-        
-        if (fromCurrency === 'eur' && toCurrency === 'czk') {
-            return +(price * exchangeRate).toFixed(0);
-        }
-        
-        return price;
-    };
-
+        this.ui.renderItems(this.filteredItems);
+    }
+    
     /**
-     * Formátuje cenu s měnou
-     * @param {number} price - Cena
-     * @param {string} currency - Měna
-     * @returns {string} - Formátovaná cena s měnou
+     * Přidání vzorových položek při prvním spuštění
      */
-    const formatPrice = (price, currency) => {
-        if (currency === 'czk') {
-            return `${price} Kč`;
-        } else {
-            return `${price} €`;
+    addSampleItems() {
+        const sampleItems = [
+            {
+                id: 'room-101',
+                name: 'Pokoj 101',
+                description: 'Dvoulůžkový pokoj s výhledem na moře',
+                price: 2500,
+                category: 'rooms',
+                image: 'images/room-101.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'room-102',
+                name: 'Pokoj 102',
+                description: 'Jednolůžkový pokoj standard',
+                price: 1800,
+                category: 'rooms',
+                image: 'images/room-102.jpg',
+                available: true,
+                isNew: true
+            },
+            {
+                id: 'room-103',
+                name: 'Apartmán 103',
+                description: 'Luxusní apartmán s terasou',
+                price: 4500,
+                category: 'rooms',
+                image: 'images/room-103.jpg',
+                available: false,
+                isNew: false
+            },
+            {
+                id: 'service-massage',
+                name: 'Masáž',
+                description: '60 minut relaxační masáže',
+                price: 1200,
+                category: 'services',
+                image: 'images/massage.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'service-spa',
+                name: 'Vstup do wellness',
+                description: 'Celodenní vstup do wellness a sauny',
+                price: 800,
+                category: 'services',
+                image: 'images/spa.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'food-breakfast',
+                name: 'Snídaně',
+                description: 'Kontinentální snídaně',
+                price: 250,
+                category: 'food',
+                image: 'images/breakfast.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'food-dinner',
+                name: 'Večeře',
+                description: 'Tříchodové menu dle denní nabídky',
+                price: 450,
+                category: 'food',
+                image: 'images/dinner.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'drink-wine',
+                name: 'Víno',
+                description: 'Láhev kvalitního místního vína',
+                price: 480,
+                category: 'drinks',
+                image: 'images/wine.jpg',
+                available: true,
+                isNew: true
+            },
+            {
+                id: 'drink-cocktail',
+                name: 'Koktejl',
+                description: 'Míchaný nápoj dle výběru',
+                price: 180,
+                category: 'drinks',
+                image: 'images/cocktail.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'extra-flowers',
+                name: 'Květiny',
+                description: 'Čerstvá kytice na pokoj',
+                price: 350,
+                category: 'extras',
+                image: 'images/flowers.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'extra-champagne',
+                name: 'Šampaňské',
+                description: 'Láhev šampaňského s jahodami',
+                price: 950,
+                category: 'extras',
+                image: 'images/champagne.jpg',
+                available: true,
+                isNew: false
+            },
+            {
+                id: 'extra-transfer',
+                name: 'Transfer na letiště',
+                description: 'Soukromý odvoz na letiště',
+                price: 1500,
+                category: 'extras',
+                image: 'images/transfer.jpg',
+                available: true,
+                isNew: false
+            }
+        ];
+        
+        sampleItems.forEach(item => {
+            this.storage.addItem(item);
+        });
+    }
+    
+    /**
+     * Získání položky podle ID
+     */
+    getItemById(id) {
+        return this.items.find(item => item.id === id);
+    }
+    
+    /**
+     * Filtrování podle kategorie
+     */
+    filterByCategory(category) {
+        this.currentCategory = category;
+        this.applyAllFilters();
+    }
+    
+    /**
+     * Filtrování podle vyhledávacího dotazu
+     */
+    filterBySearch(query) {
+        this.currentSearchQuery = query;
+        this.applyAllFilters();
+    }
+    
+    /**
+     * Aplikování filtrů dostupnosti a ceny
+     */
+    applyFilters(availability, maxPrice) {
+        this.filters.availability = availability;
+        this.filters.maxPrice = maxPrice;
+        this.applyAllFilters();
+    }
+    
+    /**
+     * Aplikování všech aktuálních filtrů
+     */
+    applyAllFilters() {
+        // Začneme se všemi položkami
+        let result = [...this.items];
+        
+        // Filtr podle kategorie
+        if (this.currentCategory !== 'all') {
+            result = result.filter(item => item.category === this.currentCategory);
         }
-    };
-
-    return {
-        getAllProducts,
-        getProductById,
-        getProductsByCategory,
-        searchProducts,
-        getCategories,
-        getLocations,
-        convertCurrency,
-        formatPrice
-    };
-})();
+        
+        // Filtr podle vyhledávání
+        if (this.currentSearchQuery) {
+            const query = this.currentSearchQuery.toLowerCase();
+            result = result.filter(item => 
+                item.name.toLowerCase().includes(query) || 
+                item.description.toLowerCase().includes(query)
+            );
+        }
+        
+        // Filtr podle dostupnosti
+        if (this.filters.availability === 'available') {
+            result = result.filter(item => item.available);
+        } else if (this.filters.availability === 'unavailable') {
+            result = result.filter(item => !item.available);
+        }
+        
+        // Filtr podle ceny
+        if (this.filters.maxPrice) {
+            result = result.filter(item => item.price <= this.filters.maxPrice);
+        }
+        
+        this.filteredItems = result;
+        this.ui.renderItems(this.filteredItems);
+    }
+    
+    /**
+     * Reset všech filtrů
+     */
+    resetFilters() {
+        this.currentCategory = 'all';
+        this.currentSearchQuery = '';
+        this.filters = {
+            availability: 'all',
+            maxPrice: 10000
+        };
+        this.filteredItems = [...this.items];
+        this.ui.renderItems(this.filteredItems);
+    }
+    
+    /**
+     * Vyhledávání položek pro našeptávač
+     */
+    searchItems(query) {
+        query = query.toLowerCase();
+        return this.items.filter(item => 
+            item.name.toLowerCase().includes(query) || 
+            item.description.toLowerCase().includes(query)
+        ).slice(0, 5); // Vrátí max 5 výsledků pro našeptávač
+    }
+    
+    /**
+     * Přidání nové položky
+     */
+    addItem(item) {
+        this.storage.addItem(item);
+        this.loadItems();
+        this.applyAllFilters();
+    }
+    
+    /**
+     * Aktualizace položky
+     */
+    updateItem(id, updatedItem) {
+        this.storage.updateItem(id, updatedItem);
+        this.loadItems();
+        this.applyAllFilters();
+    }
+    
+    /**
+     * Odstranění položky
+     */
+    removeItem(id) {
+        this.storage.removeItem(id);
+        this.loadItems();
+        this.applyAllFilters();
+    }
+    
+    /**
+     * Změna dostupnosti položky
+     */
+    toggleItemAvailability(id) {
+        const item = this.getItemById(id);
+        if (item) {
+            item.available = !item.available;
+            this.storage.updateItem(id, item);
+            this.loadItems();
+            this.applyAllFilters();
+        }
+    }
+}
