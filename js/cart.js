@@ -47,24 +47,7 @@ class Cart {
         }
     }
     
-    /**
-     * Výpočet celkových částek
-     */
-    calculateTotals() {
-        const subtotal = this.items.reduce((total, item) => {
-            return total + (item.price * item.quantity);
-        }, 0);
-        
-        const tax = subtotal * this.taxRate;
-        const total = subtotal + tax;
-        
-        // Aktualizace zobrazení částek
-        document.getElementById('cart-subtotal').textContent = `${subtotal.toFixed(0)} Kč`;
-        document.getElementById('cart-tax').textContent = `${tax.toFixed(0)} Kč`;
-        document.getElementById('cart-total').textContent = `${total.toFixed(0)} Kč`;
-        
-        return { subtotal, tax, total };
-    }
+
     
     /**
      * Přidání položky do košíku
