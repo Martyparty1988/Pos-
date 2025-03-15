@@ -1,153 +1,336 @@
 /**
- * Storage.js - Modul pro správu lokálního úložiště
- * 
- * Tento modul poskytuje funkce pro ukládání a načítání dat z localStorage,
- * což umožňuje aplikaci fungovat offline.
+ * storage.js
+ * Modul pro správu dat v localStorage
  */
 
-const Storage = (() => {
-    // Klíče pro localStorage
-    const KEYS = {
-        CART: 'villa_pos_cart',
-        SETTINGS: 'villa_pos_settings',
-        SALES: 'villa_pos_sales',
-        CURRENT_LOCATION: 'villa_pos_location'
-    };
+// Inicializace localStorage klíčů
+const STORAGE_KEYS = {
+    PRODUCTS: 'villa_pos_products',
+    CART: 'villa_pos_cart',
+    SETTINGS: 'villa_pos_settings',
+    SALES: 'villa_pos_sales',
+    CURRENT_LOCATION: 'villa_pos_current_location'
+};
 
-    // Výchozí nastavení
-    const DEFAULT_SETTINGS = {
-        darkMode: false,
-        defaultCurrency: 'czk',
-        exchangeRate: 25
-    };
-
+// Objekt pro práci s lokálním úložištěm
+const Storage = {
+    /**
+     * Inicializuje výchozí data v localStorage
+     */
+    init: function() {
+        // Kontrola, zda již existují data produktů
+        if (!this.get(STORAGE_KEYS.PRODUCTS)) {
+            this.set(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
+        }
+        
+        // Inicializace košíku, pokud neexistuje
+        if (!this.get(STORAGE_KEYS.CART)) {
+            this.set(STORAGE_KEYS.CART, []);
+        }
+        
+        // Inicializace nastavení, pokud neexistuje
+        if (!this.get(STORAGE_KEYS.SETTINGS)) {
+            this.set(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
+        }
+        
+        // Inicializace prodejů, pokud neexistují
+        if (!this.get(STORAGE_KEYS.SALES)) {
+            this.set(STORAGE_KEYS.SALES, []);
+        }
+        
+        // Nastavení výchozí lokace
+        if (!this.get(STORAGE_KEYS.CURRENT_LOCATION)) {
+            this.set(STORAGE_KEYS.CURRENT_LOCATION, 'oh-yeah');
+        }
+    },
+    
+    /**
+     * Získá data z localStorage
+     * @param {string} key - Klíč pro localStorage
+     * @returns {any} - Uložená data, nebo null pokud neexistují
+     */
+    get: function(key) {
+        try {
+            const data = localStorage.getItem(key);
+            return data ? JSON.parse(data) : null;
+        } catch (error) {
+            console.error('Error getting data from localStorage:', error);
+            return null;
+        }
+    },
+    
     /**
      * Uloží data do localStorage
-     * @param {string} key - Klíč pro uložení
+     * @param {string} key - Klíč pro localStorage
      * @param {any} data - Data k uložení
      */
-    const saveData = (key, data) => {
+    set: function(key, data) {
         try {
             localStorage.setItem(key, JSON.stringify(data));
         } catch (error) {
-            console.error('Chyba při ukládání dat:', error);
+            console.error('Error saving data to localStorage:', error);
+            // Zobrazení upozornění uživateli
+            UI.showNotification('Chyba při ukládání dat. Zkontrolujte prosím dostupné místo v úložišti.', 'error');
         }
-    };
-
+    },
+    
     /**
-     * Načte data z localStorage
-     * @param {string} key - Klíč k načtení
-     * @param {any} defaultValue - Výchozí hodnota, pokud data neexistují
-     * @returns {any} - Načtená data nebo výchozí hodnota
+     * Odstraní data z localStorage
+     * @param {string} key - Klíč pro localStorage
      */
-    const loadData = (key, defaultValue = null) => {
+    remove: function(key) {
         try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : defaultValue;
+            localStorage.removeItem(key);
         } catch (error) {
-            console.error('Chyba při načítání dat:', error);
-            return defaultValue;
+            console.error('Error removing data from localStorage:', error);
         }
-    };
-
+    },
+    
     /**
-     * Uloží košík do localStorage
-     * @param {Array} cart - Pole položek košíku
+     * Vymaže všechna data aplikace z localStorage
      */
-    const saveCart = (cart) => {
-        saveData(KEYS.CART, cart);
-    };
-
+    clearAll: function() {
+        try {
+            Object.values(STORAGE_KEYS).forEach(key => {
+                localStorage.removeItem(key);
+            });
+        } catch (error) {
+            console.error('Error clearing localStorage:', error);
+        }
+    },
+    
     /**
-     * Načte košík z localStorage
-     * @returns {Array} - Položky košíku nebo prázdné pole
+     * Získá aktuální košík
+     * @returns {Array} - Pole položek v košíku
      */
-    const loadCart = () => {
-        return loadData(KEYS.CART, []);
-    };
-
+    getCart: function() {
+        return this.get(STORAGE_KEYS.CART) || [];
+    },
+    
     /**
-     * Uloží nastavení do localStorage
+     * Uloží košík
+     * @param {Array} cart - Pole položek v košíku
+     */
+    saveCart: function(cart) {
+        this.set(STORAGE_KEYS.CART, cart);
+    },
+    
+    /**
+     * Získá produkty
+     * @returns {Array} - Pole produktů
+     */
+    getProducts: function() {
+        return this.get(STORAGE_KEYS.PRODUCTS) || [];
+    },
+    
+    /**
+     * Získá nastavení
+     * @returns {Object} - Objekt s nastavením
+     */
+    getSettings: function() {
+        return this.get(STORAGE_KEYS.SETTINGS) || DEFAULT_SETTINGS;
+    },
+    
+    /**
+     * Uloží nastavení
      * @param {Object} settings - Objekt s nastavením
      */
-    const saveSettings = (settings) => {
-        saveData(KEYS.SETTINGS, settings);
-    };
-
+    saveSettings: function(settings) {
+        this.set(STORAGE_KEYS.SETTINGS, settings);
+    },
+    
     /**
-     * Načte nastavení z localStorage
-     * @returns {Object} - Nastavení nebo výchozí hodnoty
+     * Získá prodeje
+     * @returns {Array} - Pole prodejů
      */
-    const loadSettings = () => {
-        return loadData(KEYS.SETTINGS, DEFAULT_SETTINGS);
-    };
-
+    getSales: function() {
+        return this.get(STORAGE_KEYS.SALES) || [];
+    },
+    
     /**
-     * Uloží informace o prodeji
-     * @param {Object} sale - Informace o prodeji
+     * Uloží prodej
+     * @param {Object} sale - Objekt s informacemi o prodeji
      */
-    const saveSale = (sale) => {
-        // Přidáme časové razítko
-        sale.timestamp = new Date().toISOString();
-        
-        // Načteme existující prodeje
-        const sales = loadData(KEYS.SALES, []);
-        
-        // Přidáme nový prodej
+    saveSale: function(sale) {
+        const sales = this.getSales();
         sales.push(sale);
-        
-        // Uložíme zpět
-        saveData(KEYS.SALES, sales);
-    };
-
+        this.set(STORAGE_KEYS.SALES, sales);
+    },
+    
     /**
-     * Načte všechny prodeje
-     * @returns {Array} - Seznam prodejů
+     * Získá aktuální lokaci
+     * @returns {string} - Identifikátor aktuální lokace
      */
-    const loadSales = () => {
-        return loadData(KEYS.SALES, []);
-    };
-
+    getCurrentLocation: function() {
+        return this.get(STORAGE_KEYS.CURRENT_LOCATION) || 'oh-yeah';
+    },
+    
     /**
-     * Uloží aktuální lokaci
-     * @param {string} location - ID lokace
+     * Nastaví aktuální lokaci
+     * @param {string} location - Identifikátor lokace
      */
-    const saveCurrentLocation = (location) => {
-        saveData(KEYS.CURRENT_LOCATION, location);
-    };
-
+    setCurrentLocation: function(location) {
+        this.set(STORAGE_KEYS.CURRENT_LOCATION, location);
+    },
+    
     /**
-     * Načte aktuální lokaci
-     * @returns {string} - ID aktuální lokace
+     * Exportuje všechna data aplikace
+     * @returns {Object} - Objekt se všemi daty aplikace
      */
-    const loadCurrentLocation = () => {
-        return loadData(KEYS.CURRENT_LOCATION, 'ohyeah');
-    };
+    exportData: function() {
+        const exportData = {};
+        Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
+            exportData[key] = this.get(storageKey);
+        });
+        return exportData;
+    }
+};
 
-    /**
-     * Vymaže všechna data z localStorage
-     */
-    const clearAllData = () => {
-        try {
-            localStorage.removeItem(KEYS.CART);
-            localStorage.removeItem(KEYS.SETTINGS);
-            localStorage.removeItem(KEYS.SALES);
-            localStorage.removeItem(KEYS.CURRENT_LOCATION);
-        } catch (error) {
-            console.error('Chyba při mazání dat:', error);
-        }
-    };
+// Výchozí nastavení aplikace
+const DEFAULT_SETTINGS = {
+    defaultLocation: 'oh-yeah',
+    currencyDisplay: 'after',
+    animations: true,
+    darkMode: false
+};
 
-    return {
-        saveCart,
-        loadCart,
-        saveSettings,
-        loadSettings,
-        saveSale,
-        loadSales,
-        saveCurrentLocation,
-        loadCurrentLocation,
-        clearAllData,
-        DEFAULT_SETTINGS
-    };
-})();
+// Výchozí seznam produktů
+const DEFAULT_PRODUCTS = [
+    // Nealko nápoje
+    {
+        id: 'coca-cola',
+        name: 'Coca-Cola',
+        price: 32,
+        currency: 'CZK',
+        category: 'nealko',
+        image: 'images/coca-cola.png'
+    },
+    {
+        id: 'fanta',
+        name: 'Fanta',
+        price: 32,
+        currency: 'CZK',
+        category: 'nealko',
+        image: 'images/fanta.png'
+    },
+    {
+        id: 'sprite',
+        name: 'Sprite',
+        price: 32,
+        currency: 'CZK',
+        category: 'nealko',
+        image: 'images/sprite.png'
+    },
+    {
+        id: 'red-bull',
+        name: 'Red Bull',
+        price: 59,
+        currency: 'CZK',
+        category: 'nealko',
+        image: 'images/red-bull.png'
+    },
+    
+    // Alkoholické nápoje
+    {
+        id: 'malibu',
+        name: 'Malibu',
+        price: 99,
+        currency: 'CZK',
+        category: 'alkohol',
+        image: 'images/malibu.png'
+    },
+    {
+        id: 'jack-cola',
+        name: 'Jack s colou',
+        price: 99,
+        currency: 'CZK',
+        category: 'alkohol',
+        image: 'images/jack-cola.png'
+    },
+    {
+        id: 'moscow-mule',
+        name: 'Moscow Mule',
+        price: 99,
+        currency: 'CZK',
+        category: 'alkohol',
+        image: 'images/moscow-mule.png'
+    },
+    {
+        id: 'gin-tonic',
+        name: 'Gin-Tonic',
+        price: 99,
+        currency: 'CZK',
+        category: 'alkohol',
+        image: 'images/gin-tonic.png'
+    },
+    {
+        id: 'mojito',
+        name: 'Mojito',
+        price: 99,
+        currency: 'CZK',
+        category: 'alkohol',
+        image: 'images/mojito.png'
+    },
+    {
+        id: 'prosecco',
+        name: 'Prosecco',
+        price: 390,
+        currency: 'CZK',
+        category: 'alkohol',
+        image: 'images/prosecco.png'
+    },
+    
+    // Piva
+    {
+        id: 'budvar',
+        name: 'Budvar',
+        price: 59,
+        currency: 'CZK',
+        category: 'pivo',
+        image: 'images/budvar.png'
+    },
+    {
+        id: 'sud-30l',
+        name: 'Sud 30l',
+        price: 125,
+        currency: 'EUR',
+        category: 'pivo',
+        image: 'images/sud-30l.png'
+    },
+    {
+        id: 'sud-50l',
+        name: 'Sud 50l',
+        price: 175,
+        currency: 'EUR',
+        category: 'pivo',
+        image: 'images/sud-50l.png'
+    },
+    
+    // Relaxační služby
+    {
+        id: 'wellness',
+        name: 'Wellness balíček',
+        price: 0,
+        currency: 'EUR',
+        category: 'relax',
+        image: 'images/wellness.png',
+        customPrice: true
+    },
+    {
+        id: 'plyny',
+        name: 'Plyny do ohňových stolů',
+        price: 12,
+        currency: 'EUR',
+        category: 'relax',
+        image: 'images/plyny.png'
+    },
+    {
+        id: 'city-tax',
+        name: 'City Tax',
+        price: 0,
+        currency: 'EUR',
+        category: 'relax',
+        image: 'images/city-tax.png',
+        cityTax: true
+    }
+];
