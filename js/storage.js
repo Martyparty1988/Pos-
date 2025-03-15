@@ -1,336 +1,380 @@
 /**
- * storage.js
- * Modul pro správu dat v localStorage
+ * Třída pro správu úložiště dat
  */
-
-// Inicializace localStorage klíčů
-const STORAGE_KEYS = {
-    PRODUCTS: 'villa_pos_products',
-    CART: 'villa_pos_cart',
-    SETTINGS: 'villa_pos_settings',
-    SALES: 'villa_pos_sales',
-    CURRENT_LOCATION: 'villa_pos_current_location'
-};
-
-// Objekt pro práci s lokálním úložištěm
-const Storage = {
-    /**
-     * Inicializuje výchozí data v localStorage
-     */
-    init: function() {
-        // Kontrola, zda již existují data produktů
-        if (!this.get(STORAGE_KEYS.PRODUCTS)) {
-            this.set(STORAGE_KEYS.PRODUCTS, DEFAULT_PRODUCTS);
-        }
-        
-        // Inicializace košíku, pokud neexistuje
-        if (!this.get(STORAGE_KEYS.CART)) {
-            this.set(STORAGE_KEYS.CART, []);
-        }
-        
-        // Inicializace nastavení, pokud neexistuje
-        if (!this.get(STORAGE_KEYS.SETTINGS)) {
-            this.set(STORAGE_KEYS.SETTINGS, DEFAULT_SETTINGS);
-        }
-        
-        // Inicializace prodejů, pokud neexistují
-        if (!this.get(STORAGE_KEYS.SALES)) {
-            this.set(STORAGE_KEYS.SALES, []);
-        }
-        
-        // Nastavení výchozí lokace
-        if (!this.get(STORAGE_KEYS.CURRENT_LOCATION)) {
-            this.set(STORAGE_KEYS.CURRENT_LOCATION, 'oh-yeah');
-        }
-    },
+class Storage {
+    constructor() {
+        this.keys = {
+            items: 'villa_pos_items',
+            cart: 'villa_pos_cart',
+            orders: 'villa_pos_orders',
+            settings: 'villa_pos_settings',
+            statistics: 'villa_pos_statistics'
+        };
+    }
     
     /**
-     * Získá data z localStorage
-     * @param {string} key - Klíč pro localStorage
-     * @returns {any} - Uložená data, nebo null pokud neexistují
+     * Inicializace úložiště
      */
-    get: function(key) {
+    initialize() {
+        // Kontrola, zda existuje indexedDB nebo localStorage
+        this.storageAvailable = this.isStorageAvailable();
+        
+        if (!this.storageAvailable) {
+            console.error('Úložiště není dostupné. Data nebudou uchována mezi relacemi.');
+        }
+    }
+    
+    /**
+     * Kontrola dostupnosti úložiště
+     */
+    isStorageAvailable() {
         try {
-            const data = localStorage.getItem(key);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            console.error('Error getting data from localStorage:', error);
-            return null;
+            const test = 'test_storage';
+            localStorage.setItem(test, test);
+            localStorage.removeItem(test);
+            return true;
+        } catch (e) {
+            return false;
         }
-    },
+    }
     
     /**
-     * Uloží data do localStorage
-     * @param {string} key - Klíč pro localStorage
-     * @param {any} data - Data k uložení
+     * Získání dat z úložiště
      */
-    set: function(key, data) {
+    getFromStorage(key) {
+        if (!this.storageAvailable) return null;
+        
+        const storedData = localStorage.getItem(key);
+        return storedData ? JSON.parse(storedData) : null;
+    }
+    
+    /**
+     * Uložení dat do úložiště
+     */
+    saveToStorage(key, data) {
+        if (!this.storageAvailable) return;
+        
         try {
             localStorage.setItem(key, JSON.stringify(data));
-        } catch (error) {
-            console.error('Error saving data to localStorage:', error);
-            // Zobrazení upozornění uživateli
-            UI.showNotification('Chyba při ukládání dat. Zkontrolujte prosím dostupné místo v úložišti.', 'error');
+        } catch (e) {
+            console.error('Chyba při ukládání dat:', e);
         }
-    },
+    }
     
     /**
-     * Odstraní data z localStorage
-     * @param {string} key - Klíč pro localStorage
+     * Odstranění dat z úložiště
      */
-    remove: function(key) {
-        try {
-            localStorage.removeItem(key);
-        } catch (error) {
-            console.error('Error removing data from localStorage:', error);
+    removeFromStorage(key) {
+        if (!this.storageAvailable) return;
+        
+        localStorage.removeItem(key);
+    }
+    
+    /**
+     * Získání položek inventáře
+     */
+    getItems() {
+        return this.getFromStorage(this.keys.items) || [];
+    }
+    
+    /**
+     * Přidání položky do inventáře
+     */
+    addItem(item) {
+        const items = this.getItems();
+        items.push(item);
+        this.saveToStorage(this.keys.items, items);
+    }
+    
+    /**
+     * Aktualizace položky v inventáři
+     */
+    updateItem(id, updatedItem) {
+        const items = this.getItems();
+        const index = items.findIndex(item => item.id === id);
+        
+        if (index !== -1) {
+            items[index] = updatedItem;
+            this.saveToStorage(this.keys.items, items);
         }
-    },
+    }
     
     /**
-     * Vymaže všechna data aplikace z localStorage
+     * Odstranění položky z inventáře
      */
-    clearAll: function() {
-        try {
-            Object.values(STORAGE_KEYS).forEach(key => {
-                localStorage.removeItem(key);
-            });
-        } catch (error) {
-            console.error('Error clearing localStorage:', error);
+    removeItem(id) {
+        const items = this.getItems();
+        const filteredItems = items.filter(item => item.id !== id);
+        this.saveToStorage(this.keys.items, filteredItems);
+    }
+    
+    /**
+     * Získání košíku
+     */
+    getCart() {
+        return this.getFromStorage(this.keys.cart) || [];
+    }
+    
+    /**
+     * Uložení košíku
+     */
+    saveCart(cart) {
+        this.saveToStorage(this.keys.cart, cart);
+    }
+    
+    /**
+     * Získání objednávek
+     */
+    getOrders() {
+        return this.getFromStorage(this.keys.orders) || [];
+    }
+    
+    /**
+     * Získání objednávky podle ID
+     */
+    getOrderById(id) {
+        const orders = this.getOrders();
+        return orders.find(order => order.id === id);
+    }
+    
+    /**
+     * Uložení objednávky
+     */
+    saveOrder(order) {
+        const orders = this.getOrders();
+        orders.push(order);
+        this.saveToStorage(this.keys.orders, orders);
+    }
+    
+    /**
+     * Aktualizace objednávky
+     */
+    updateOrder(id, updatedOrder) {
+        const orders = this.getOrders();
+        const index = orders.findIndex(order => order.id === id);
+        
+        if (index !== -1) {
+            orders[index] = updatedOrder;
+            this.saveToStorage(this.keys.orders, orders);
         }
-    },
+    }
     
     /**
-     * Získá aktuální košík
-     * @returns {Array} - Pole položek v košíku
+     * Odstranění objednávky
      */
-    getCart: function() {
-        return this.get(STORAGE_KEYS.CART) || [];
-    },
+    removeOrder(id) {
+        const orders = this.getOrders();
+        const filteredOrders = orders.filter(order => order.id !== id);
+        this.saveToStorage(this.keys.orders, filteredOrders);
+    }
     
     /**
-     * Uloží košík
-     * @param {Array} cart - Pole položek v košíku
+     * Získání nastavení
      */
-    saveCart: function(cart) {
-        this.set(STORAGE_KEYS.CART, cart);
-    },
+    getSettings() {
+        return this.getFromStorage(this.keys.settings) || null;
+    }
     
     /**
-     * Získá produkty
-     * @returns {Array} - Pole produktů
+     * Uložení nastavení
      */
-    getProducts: function() {
-        return this.get(STORAGE_KEYS.PRODUCTS) || [];
-    },
+    saveSettings(settings) {
+        this.saveToStorage(this.keys.settings, settings);
+    }
     
     /**
-     * Získá nastavení
-     * @returns {Object} - Objekt s nastavením
+     * Získání statistik
      */
-    getSettings: function() {
-        return this.get(STORAGE_KEYS.SETTINGS) || DEFAULT_SETTINGS;
-    },
+    getStatistics() {
+        return this.getFromStorage(this.keys.statistics) || {
+            daily: [],
+            weekly: [],
+            monthly: [],
+            categories: {},
+            popular: []
+        };
+    }
     
     /**
-     * Uloží nastavení
-     * @param {Object} settings - Objekt s nastavením
+     * Přidání objednávky do statistik
      */
-    saveSettings: function(settings) {
-        this.set(STORAGE_KEYS.SETTINGS, settings);
-    },
-    
-    /**
-     * Získá prodeje
-     * @returns {Array} - Pole prodejů
-     */
-    getSales: function() {
-        return this.get(STORAGE_KEYS.SALES) || [];
-    },
-    
-    /**
-     * Uloží prodej
-     * @param {Object} sale - Objekt s informacemi o prodeji
-     */
-    saveSale: function(sale) {
-        const sales = this.getSales();
-        sales.push(sale);
-        this.set(STORAGE_KEYS.SALES, sales);
-    },
-    
-    /**
-     * Získá aktuální lokaci
-     * @returns {string} - Identifikátor aktuální lokace
-     */
-    getCurrentLocation: function() {
-        return this.get(STORAGE_KEYS.CURRENT_LOCATION) || 'oh-yeah';
-    },
-    
-    /**
-     * Nastaví aktuální lokaci
-     * @param {string} location - Identifikátor lokace
-     */
-    setCurrentLocation: function(location) {
-        this.set(STORAGE_KEYS.CURRENT_LOCATION, location);
-    },
-    
-    /**
-     * Exportuje všechna data aplikace
-     * @returns {Object} - Objekt se všemi daty aplikace
-     */
-    exportData: function() {
-        const exportData = {};
-        Object.entries(STORAGE_KEYS).forEach(([key, storageKey]) => {
-            exportData[key] = this.get(storageKey);
+    addToStatistics(order) {
+        const stats = this.getStatistics();
+        const now = new Date();
+        const dayStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+        const weekStr = this.getWeekNumber(now);
+        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`; // YYYY-MM
+        
+        // Aktualizace denních statistik
+        this.updatePeriodStats(stats.daily, dayStr, order);
+        
+        // Aktualizace týdenních statistik
+        this.updatePeriodStats(stats.weekly, weekStr, order);
+        
+        // Aktualizace měsíčních statistik
+        this.updatePeriodStats(stats.monthly, monthStr, order);
+        
+        // Aktualizace statistik kategorií
+        order.items.forEach(item => {
+            const product = this.getItemById(item.id);
+            if (product) {
+                const category = product.category;
+                if (!stats.categories[category]) {
+                    stats.categories[category] = 0;
+                }
+                stats.categories[category] += item.price * item.quantity;
+            }
         });
-        return exportData;
+        
+        // Aktualizace populárních položek
+        order.items.forEach(item => {
+            const existingItem = stats.popular.find(p => p.id === item.id);
+            if (existingItem) {
+                existingItem.quantity += item.quantity;
+                existingItem.total += item.price * item.quantity;
+            } else {
+                stats.popular.push({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    total: item.price * item.quantity
+                });
+            }
+        });
+        
+        // Seřazení populárních položek
+        stats.popular.sort((a, b) => b.quantity - a.quantity);
+        
+        // Omezení na top 10
+        stats.popular = stats.popular.slice(0, 10);
+        
+        this.saveToStorage(this.keys.statistics, stats);
     }
-};
-
-// Výchozí nastavení aplikace
-const DEFAULT_SETTINGS = {
-    defaultLocation: 'oh-yeah',
-    currencyDisplay: 'after',
-    animations: true,
-    darkMode: false
-};
-
-// Výchozí seznam produktů
-const DEFAULT_PRODUCTS = [
-    // Nealko nápoje
-    {
-        id: 'coca-cola',
-        name: 'Coca-Cola',
-        price: 32,
-        currency: 'CZK',
-        category: 'nealko',
-        image: 'images/coca-cola.png'
-    },
-    {
-        id: 'fanta',
-        name: 'Fanta',
-        price: 32,
-        currency: 'CZK',
-        category: 'nealko',
-        image: 'images/fanta.png'
-    },
-    {
-        id: 'sprite',
-        name: 'Sprite',
-        price: 32,
-        currency: 'CZK',
-        category: 'nealko',
-        image: 'images/sprite.png'
-    },
-    {
-        id: 'red-bull',
-        name: 'Red Bull',
-        price: 59,
-        currency: 'CZK',
-        category: 'nealko',
-        image: 'images/red-bull.png'
-    },
     
-    // Alkoholické nápoje
-    {
-        id: 'malibu',
-        name: 'Malibu',
-        price: 99,
-        currency: 'CZK',
-        category: 'alkohol',
-        image: 'images/malibu.png'
-    },
-    {
-        id: 'jack-cola',
-        name: 'Jack s colou',
-        price: 99,
-        currency: 'CZK',
-        category: 'alkohol',
-        image: 'images/jack-cola.png'
-    },
-    {
-        id: 'moscow-mule',
-        name: 'Moscow Mule',
-        price: 99,
-        currency: 'CZK',
-        category: 'alkohol',
-        image: 'images/moscow-mule.png'
-    },
-    {
-        id: 'gin-tonic',
-        name: 'Gin-Tonic',
-        price: 99,
-        currency: 'CZK',
-        category: 'alkohol',
-        image: 'images/gin-tonic.png'
-    },
-    {
-        id: 'mojito',
-        name: 'Mojito',
-        price: 99,
-        currency: 'CZK',
-        category: 'alkohol',
-        image: 'images/mojito.png'
-    },
-    {
-        id: 'prosecco',
-        name: 'Prosecco',
-        price: 390,
-        currency: 'CZK',
-        category: 'alkohol',
-        image: 'images/prosecco.png'
-    },
-    
-    // Piva
-    {
-        id: 'budvar',
-        name: 'Budvar',
-        price: 59,
-        currency: 'CZK',
-        category: 'pivo',
-        image: 'images/budvar.png'
-    },
-    {
-        id: 'sud-30l',
-        name: 'Sud 30l',
-        price: 125,
-        currency: 'EUR',
-        category: 'pivo',
-        image: 'images/sud-30l.png'
-    },
-    {
-        id: 'sud-50l',
-        name: 'Sud 50l',
-        price: 175,
-        currency: 'EUR',
-        category: 'pivo',
-        image: 'images/sud-50l.png'
-    },
-    
-    // Relaxační služby
-    {
-        id: 'wellness',
-        name: 'Wellness balíček',
-        price: 0,
-        currency: 'EUR',
-        category: 'relax',
-        image: 'images/wellness.png',
-        customPrice: true
-    },
-    {
-        id: 'plyny',
-        name: 'Plyny do ohňových stolů',
-        price: 12,
-        currency: 'EUR',
-        category: 'relax',
-        image: 'images/plyny.png'
-    },
-    {
-        id: 'city-tax',
-        name: 'City Tax',
-        price: 0,
-        currency: 'EUR',
-        category: 'relax',
-        image: 'images/city-tax.png',
-        cityTax: true
+    /**
+     * Aktualizace statistik za období
+     */
+    updatePeriodStats(periodStats, periodKey, order) {
+        const existingPeriod = periodStats.find(p => p.period === periodKey);
+        
+        if (existingPeriod) {
+            existingPeriod.totalSales += order.totals.total;
+            existingPeriod.orderCount += 1;
+            existingPeriod.items = existingPeriod.items || [];
+            
+            // Sloučení položek
+            order.items.forEach(item => {
+                const existingItem = existingPeriod.items.find(i => i.id === item.id);
+                if (existingItem) {
+                    existingItem.quantity += item.quantity;
+                    existingItem.total += item.price * item.quantity;
+                } else {
+                    existingPeriod.items.push({
+                        id: item.id,
+                        name: item.name,
+                        quantity: item.quantity,
+                        total: item.price * item.quantity
+                    });
+                }
+            });
+        } else {
+            periodStats.push({
+                period: periodKey,
+                totalSales: order.totals.total,
+                orderCount: 1,
+                items: order.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    quantity: item.quantity,
+                    total: item.price * item.quantity
+                }))
+            });
+        }
+        
+        // Omezení na posledních 30 záznamů
+        if (periodStats.length > 30) {
+            periodStats.sort((a, b) => b.period.localeCompare(a.period));
+            periodStats = periodStats.slice(0, 30);
+        }
     }
-];
+    
+    /**
+     * Získání čísla týdne v roce
+     */
+    getWeekNumber(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        const dayNum = d.getUTCDay() || 7;
+        d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    }
+    
+    /**
+     * Získání položky podle ID
+     */
+    getItemById(id) {
+        const items = this.getItems();
+        return items.find(item => item.id === id);
+    }
+    
+    /**
+     * Export všech dat
+     */
+    exportData() {
+        const data = {
+            items: this.getItems(),
+            orders: this.getOrders(),
+            statistics: this.getStatistics(),
+            settings: this.getSettings(),
+            exportDate: new Date().toISOString()
+        };
+        
+        const dataStr = JSON.stringify(data, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+        
+        const exportFileName = `villa_pos_export_${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileName);
+        linkElement.click();
+    }
+    
+    /**
+     * Import dat ze souboru
+     */
+    importData(jsonData) {
+        try {
+            const data = JSON.parse(jsonData);
+            
+            // Kontrola struktury dat
+            if (!data.items || !data.orders || !data.statistics) {
+                throw new Error('Neplatný formát dat');
+            }
+            
+            // Import dat
+            this.saveToStorage(this.keys.items, data.items);
+            this.saveToStorage(this.keys.orders, data.orders);
+            this.saveToStorage(this.keys.statistics, data.statistics);
+            
+            if (data.settings) {
+                this.saveToStorage(this.keys.settings, data.settings);
+            }
+            
+            return true;
+        } catch (e) {
+            console.error('Chyba při importu dat:', e);
+            return false;
+        }
+    }
+    
+    /**
+     * Vymazání všech dat
+     */
+    clearAllData() {
+        Object.values(this.keys).forEach(key => {
+            this.removeFromStorage(key);
+        });
+    }
+}
