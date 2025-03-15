@@ -1,771 +1,501 @@
-/**
- * ui.js
- * Modul pro správu uživatelského rozhraní
- */
+/* Základní reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-const UI = {
-    // DOM elementy
-    DOMElements: {
-        productsGrid: document.getElementById('products-grid'),
-        cartItems: document.getElementById('cart-items'),
-        subtotalDisplay: document.getElementById('subtotal'),
-        totalDisplay: document.getElementById('total'),
-        searchInput: document.getElementById('search-input'),
-        filterButtons: document.querySelectorAll('.filter-btn'),
-        locationButtons: document.querySelectorAll('.location-btn'),
-        themeToggle: document.getElementById('theme-toggle'),
-        checkoutBtn: document.getElementById('checkout-btn'),
-        clearCartBtn: document.getElementById('clear-cart'),
-        
-        // Modální okna
-        statsModal: document.getElementById('stats-modal'),
-        settingsModal: document.getElementById('settings-modal'),
-        receiptModal: document.getElementById('receipt-modal'),
-        customPriceModal: document.getElementById('custom-price-modal'),
-        cityTaxModal: document.getElementById('city-tax-modal'),
-        
-        // Tlačítka pro otevření modálních oken
-        statsBtn: document.getElementById('stats-btn'),
-        settingsBtn: document.getElementById('settings-btn'),
-        
-        // Tlačítka pro zavření modálních oken
-        closeModalButtons: document.querySelectorAll('.close-modal'),
-        
-        // Nastavení
-        defaultLocationSelect: document.getElementById('default-location'),
-        currencyDisplaySelect: document.getElementById('currency-display'),
-        animationsToggle: document.getElementById('animations-toggle'),
-        clearDataBtn: document.getElementById('clear-data'),
-        exportDataBtn: document.getElementById('export-data'),
-        
-        // Účtenka
-        receiptContainer: document.getElementById('receipt-container'),
-        printReceiptBtn: document.getElementById('print-receipt'),
-        saveReceiptBtn: document.getElementById('save-receipt'),
-        completeSaleBtn: document.getElementById('complete-sale'),
-        
-        // Vlastní cena
-        customPriceInput: document.getElementById('custom-price-input'),
-        customPriceProductName: document.getElementById('custom-price-product-name'),
-        applyCustomPriceBtn: document.getElementById('apply-custom-price'),
-        
-        // City Tax
-        personsCountInput: document.getElementById('persons-count'),
-        nightsCountInput: document.getElementById('nights-count'),
-        cityTaxTotalDisplay: document.getElementById('city-tax-total'),
-        applyCityTaxBtn: document.getElementById('apply-city-tax'),
-        
-        // Notifikace
-        notification: document.getElementById('notification')
-    },
+/* Proměnné pro barvy */
+:root {
+    --color-primary: #4f6df5;
+    --color-primary-dark: #3b5bd9;
+    --color-primary-light: #7a8ff8;
+    --color-secondary: #6c757d;
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --color-warning: #ffc107;
+    --color-info: #17a2b8;
     
-    /**
-     * Inicializace UI
-     */
-    init: function() {
-        this.renderProducts();
-        this.updateCart();
-        this.applySettings();
-        this.setupEventListeners();
-    },
+    --color-background: #f8f9fa;
+    --color-surface: #ffffff;
+    --color-text: #343a40;
+    --color-text-light: #6c757d;
     
-    /**
-     * Nastavení posluchačů událostí
-     */
-    setupEventListeners: function() {
-        // Vyhledávání produktů
-        this.DOMElements.searchInput.addEventListener('input', this.handleSearch.bind(this));
-        
-        // Filtrování produktů
-        this.DOMElements.filterButtons.forEach(btn => {
-            btn.addEventListener('click', this.handleFilter.bind(this));
-        });
-        
-        // Přepínání lokací
-        this.DOMElements.locationButtons.forEach(btn => {
-            btn.addEventListener('click', this.handleLocationChange.bind(this));
-        });
-        
-        // Přepínání tmavého režimu
-        this.DOMElements.themeToggle.addEventListener('click', this.toggleDarkMode.bind(this));
-        
-        // Otevření modálních oken
-        this.DOMElements.statsBtn.addEventListener('click', () => this.openModal('stats'));
-        this.DOMElements.settingsBtn.addEventListener('click', () => this.openModal('settings'));
-        this.DOMElements.checkoutBtn.addEventListener('click', () => this.openModal('receipt'));
-        
-        // Zavření modálních oken
-        this.DOMElements.closeModalButtons.forEach(btn => {
-            btn.addEventListener('click', this.closeModal.bind(this));
-        });
-        
-        // Vymazání košíku
-        this.DOMElements.clearCartBtn.addEventListener('click', () => {
-            if (Cart.isEmpty()) {
-                this.showNotification('Košík je již prázdný', 'info');
-                return;
-            }
-            
-            if (confirm('Opravdu chcete vyprázdnit košík?')) {
-                Cart.clearCart();
-                this.updateCart();
-                this.showNotification('Košík byl vyprázdněn', 'success');
-            }
-        });
-        
-        // Nastavení
-        this.DOMElements.defaultLocationSelect.addEventListener('change', this.saveSettings.bind(this));
-        this.DOMElements.currencyDisplaySelect.addEventListener('change', this.saveSettings.bind(this));
-        this.DOMElements.animationsToggle.addEventListener('change', this.saveSettings.bind(this));
-        this.DOMElements.clearDataBtn.addEventListener('click', this.handleClearData.bind(this));
-        this.DOMElements.exportDataBtn.addEventListener('click', this.handleExportData.bind(this));
-        
-        // Účtenka
-        this.DOMElements.printReceiptBtn.addEventListener('click', this.printReceipt.bind(this));
-        this.DOMElements.saveReceiptBtn.addEventListener('click', this.saveReceipt.bind(this));
-        this.DOMElements.completeSaleBtn.addEventListener('click', this.completeSale.bind(this));
-        
-        // Vlastní cena
-        this.DOMElements.applyCustomPriceBtn.addEventListener('click', this.applyCustomPrice.bind(this));
-        
-        // City Tax
-        this.DOMElements.personsCountInput.addEventListener('input', this.updateCityTaxTotal.bind(this));
-        this.DOMElements.nightsCountInput.addEventListener('input', this.updateCityTaxTotal.bind(this));
-        this.DOMElements.applyCityTaxBtn.addEventListener('click', this.applyCityTax.bind(this));
-        
-        // Ripple efekt pro tlačítka
-        document.querySelectorAll('.primary-btn, .secondary-btn, .danger-btn, .success-btn, .filter-btn, .location-btn, .nav-btn').forEach(btn => {
-            btn.addEventListener('click', this.createRippleEffect);
-        });
-        
-        // Drag & Drop pro produkty
-        this.setupDragAndDrop();
-    },
+    --color-border: #dee2e6;
+    --color-shadow: rgba(0, 0, 0, 0.1);
     
-    /**
-     * Zobrazí produkty v mřížce
-     */
-    renderProducts: function() {
-        const products = Storage.getProducts();
-        const filterValue = this.getActiveFilter();
-        const searchValue = this.DOMElements.searchInput.value.toLowerCase();
-        
-        let html = '';
-        let delay = 0;
-        
-        // Filtrování produktů podle kategorie a vyhledávání
-        const filteredProducts = products.filter(product => {
-            if (filterValue !== 'all' && product.category !== filterValue) {
-                return false;
-            }
-            if (searchValue && !product.name.toLowerCase().includes(searchValue)) {
-                return false;
-            }
-            return true;
-        });
-        
-        // Přidáme třídu pro animaci filtrování
-        this.DOMElements.productsGrid.classList.add('filtering');
-        
-        // Generování HTML pro každý produkt
-        filteredProducts.forEach(product => {
-            const imagePath = product.image || `images/placeholder.png`;
-            const priceDisplay = this.formatPrice(product.price, product.currency);
-            
-            html += `
-                <div class="product-card ${product.category}" data-id="${product.id}" draggable="true" style="animation-delay: ${delay}s">
-                    <div class="product-image" style="background-image: url('${imagePath}')">
-                        <span class="product-category">${this.getCategoryName(product.category)}</span>
-                    </div>
-                    <div class="product-info">
-                        <h3 class="product-name">${product.name}</h3>
-                        <div class="product-price ${product.currency === 'EUR' ? 'product-price-eur' : ''}">
-                            <span>${product.customPrice ? 'Vlastní cena' : (product.cityTax ? 'Výpočet ceny' : priceDisplay)}</span>
-                            <button class="add-to-cart" data-id="${product.id}" aria-label="Přidat do košíku">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            delay += 0.05;
-        });
-        
-        // Pokud nejsou žádné produkty
-        if (filteredProducts.length === 0) {
-            html = '<div class="no-products">Žádné produkty nenalezeny.</div>';
-        }
-        
-        // Vložení HTML do mřížky produktů
-        this.DOMElements.productsGrid.innerHTML = html;
-        
-        // Odstranění třídy pro animaci filtrování po dokončení
-        setTimeout(() => {
-            this.DOMElements.productsGrid.classList.remove('filtering');
-        }, 400);
-        
-        // Přidání posluchačů událostí pro tlačítka pro přidání do košíku
-        this.DOMElements.productsGrid.querySelectorAll('.add-to-cart').forEach(btn => {
-            btn.addEventListener('click', this.handleAddToCart.bind(this));
-        });
-        
-        // Přidání posluchačů událostí pro produkty s vlastní cenou
-        this.DOMElements.productsGrid.querySelectorAll('.product-card').forEach(card => {
-            card.addEventListener('click', (e) => {
-                // Ignorovat kliknutí na tlačítko přidat do košíku
-                if (e.target.closest('.add-to-cart')) {
-                    return;
-                }
-                
-                const productId = card.dataset.id;
-                const product = products.find(p => p.id === productId);
-                
-                // Otevření modálního okna pro vlastní cenu nebo City Tax
-                if (product.customPrice) {
-                    this.openCustomPriceModal(product);
-                } else if (product.cityTax) {
-                    this.openCityTaxModal();
-                }
-            });
-        });
-    },
+    --border-radius: 8px;
+    --transition-speed: 0.3s;
+    --shadow-small: 0 2px 4px rgba(0, 0, 0, 0.05);
+    --shadow-medium: 0 4px 8px rgba(0, 0, 0, 0.1);
+    --shadow-large: 0 8px 16px rgba(0, 0, 0, 0.15);
+
+    /* Zvýšení některých specifických hodnot pro villa-specifické prvky */
+    --header-height: 70px;
+    --sidebar-width: 280px;
+    --cart-width: 320px;
+}
+
+/* Tmavý motiv */
+.dark-mode {
+    --color-primary: #6583ff;
+    --color-primary-dark: #5373f0;
+    --color-primary-light: #8ba1ff;
     
-    /**
-     * Aktualizuje zobrazení košíku
-     */
-    updateCart: function() {
-        const cartItems = Cart.getItems();
-        let html = '';
-        
-        if (cartItems.length > 0) {
-            cartItems.forEach(item => {
-                const imagePath = item.image || `images/placeholder.png`;
-                const itemTotal = item.price * item.quantity;
-                const priceDisplay = this.formatPrice(item.price, item.currency);
-                const totalDisplay = this.formatPrice(itemTotal, item.currency);
-                
-                html += `
-                    <div class="cart-item" data-id="${item.id}">
-                        <div class="cart-item-image" style="background-image: url('${imagePath}')"></div>
-                        <div class="cart-item-info">
-                            <div class="cart-item-name">${item.name}</div>
-                            <div class="cart-item-price ${item.currency === 'EUR' ? 'cart-item-price-eur' : ''}">${priceDisplay}</div>
-                        </div>
-                        <div class="cart-item-actions">
-                            <div class="quantity-control">
-                                <button class="quantity-btn decrease" data-id="${item.id}">
-                                    <i class="fas fa-minus"></i>
-                                </button>
-                                <span class="quantity-value">${item.quantity}</span>
-                                <button class="quantity-btn increase" data-id="${item.id}">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-                            </div>
-                            <button class="remove-item" data-id="${item.id}">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-        } else {
-            html = '<div class="empty-cart-message">Košík je prázdný</div>';
-        }
-        
-        // Aktualizace HTML košíku
-        this.DOMElements.cartItems.innerHTML = html;
-        
-        // Aktualizace součtů
-        this.updateCartTotals();
-        
-        // Přidání posluchačů událostí pro tlačítka v košíku
-        if (cartItems.length > 0) {
-            // Tlačítka pro zvýšení množství
-            this.DOMElements.cartItems.querySelectorAll('.quantity-btn.increase').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    Cart.increaseQuantity(id);
-                    this.updateCart();
-                    this.animateQuantityChange(e.currentTarget.parentElement.querySelector('.quantity-value'));
-                });
-            });
-            
-            // Tlačítka pro snížení množství
-            this.DOMElements.cartItems.querySelectorAll('.quantity-btn.decrease').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    Cart.decreaseQuantity(id);
-                    this.updateCart();
-                    
-                    const quantityElement = e.currentTarget.parentElement.querySelector('.quantity-value');
-                    const item = Cart.getItemById(id);
-                    
-                    if (item) {
-                        this.animateQuantityChange(quantityElement);
-                    }
-                });
-            });
-            
-            // Tlačítka pro odstranění položky
-            this.DOMElements.cartItems.querySelectorAll('.remove-item').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const id = e.currentTarget.dataset.id;
-                    const cartItem = e.currentTarget.closest('.cart-item');
-                    
-                    // Animace odstranění položky
-                    cartItem.classList.add('removing');
-                    
-                    // Odstranění položky po dokončení animace
-                    setTimeout(() => {
-                        Cart.removeItem(id);
-                        this.updateCart();
-                    }, 300);
-                });
-            });
-        }
-        
-        // Aktualizace tlačítka "Vytvořit účtenku"
-        this.DOMElements.checkoutBtn.disabled = cartItems.length === 0;
-    },
+    --color-background: #1a1d21;
+    --color-surface: #272a30;
+    --color-text: #f8f9fa;
+    --color-text-light: #adb5bd;
     
-    /**
-     * Aktualizuje součty v košíku
-     */
-    updateCartTotals: function() {
-        const totals = Cart.calculateTotals();
-        
-        // Formátování součtů s měnou
-        const subtotalCZK = this.formatPrice(totals.subtotalCZK, 'CZK');
-        const subtotalEUR = this.formatPrice(totals.subtotalEUR, 'EUR');
-        const totalCZK = this.formatPrice(totals.totalCZK, 'CZK');
-        const totalEUR = this.formatPrice(totals.totalEUR, 'EUR');
-        
-        // Zobrazení součtů
-        let subtotalText = '';
-        let totalText = '';
-        
-        if (totals.subtotalCZK > 0 && totals.subtotalEUR > 0) {
-            subtotalText = `${subtotalCZK} + ${subtotalEUR}`;
-            totalText = `${totalCZK} + ${totalEUR}`;
-        } else if (totals.subtotalCZK > 0) {
-            subtotalText = subtotalCZK;
-            totalText = totalCZK;
-        } else if (totals.subtotalEUR > 0) {
-            subtotalText = subtotalEUR;
-            totalText = totalEUR;
-        } else {
-            subtotalText = '0 Kč';
-            totalText = '0 Kč';
-        }
-        
-        this.DOMElements.subtotalDisplay.textContent = subtotalText;
-        this.DOMElements.totalDisplay.textContent = totalText;
-    },
-    
-    /**
-     * Zpracování přidání produktu do košíku
-     * @param {Event} e - Událost kliknutí
-     */
-    handleAddToCart: function(e) {
-        e.stopPropagation();
-        
-        const button = e.currentTarget;
-        const productId = button.dataset.id;
-        const product = Storage.getProducts().find(p => p.id === productId);
-        
-        if (product) {
-            // Pro produkty s vlastní cenou nebo City Tax
-            if (product.customPrice) {
-                this.openCustomPriceModal(product);
-                return;
-            }
-            
-            if (product.cityTax) {
-                this.openCityTaxModal();
-                return;
-            }
-            
-            // Přidání produktu do košíku
-            Cart.addItem(product);
-            this.updateCart();
-            this.animateAddToCart(product.id);
-            this.showNotification(`${product.name} přidán do košíku`, 'success');
-            
-            // Animace tlačítka
-            button.classList.add('adding');
-            setTimeout(() => {
-                button.classList.remove('adding');
-            }, 300);
-        }
-    },
-    
-    /**
-     * Zpracování vyhledávání produktů
-     */
-    handleSearch: function() {
-        this.renderProducts();
-    },
-    
-    /**
-     * Zpracování filtrování produktů
-     * @param {Event} e - Událost kliknutí
-     */
-    handleFilter: function(e) {
-        const filterBtn = e.currentTarget;
-        const filter = filterBtn.dataset.filter;
-        
-        // Odstranění aktivní třídy ze všech filtrů
-        this.DOMElements.filterButtons.forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Přidání aktivní třídy na vybraný filtr
-        filterBtn.classList.add('active');
-        
-        // Překreslení produktů s novým filtrem
-        this.renderProducts();
-    },
-    
-    /**
-     * Získá aktuální aktivní filtr
-     * @returns {string} - Hodnota filtru
-     */
-    getActiveFilter: function() {
-        const activeFilter = document.querySelector('.filter-btn.active');
-        return activeFilter ? activeFilter.dataset.filter : 'all';
-    },
-    
-    /**
-     * Zpracování změny lokace
-     * @param {Event} e - Událost kliknutí
-     */
-    handleLocationChange: function(e) {
-        const locationBtn = e.currentTarget;
-        const location = locationBtn.dataset.location;
-        
-        // Odstranění aktivní třídy ze všech lokací
-        this.DOMElements.locationButtons.forEach(btn => {
-            btn.classList.remove('active');
-        });
-        
-        // Přidání aktivní třídy na vybranou lokaci
-        locationBtn.classList.add('active');
-        
-        // Uložení aktuální lokace
-        Storage.setCurrentLocation(location);
-        
-        // Zobrazení upozornění
-        this.showNotification(`Přepnuto na lokaci: ${this.getLocationName(location)}`, 'info');
-    },
-    
-    /**
-     * Otevře modální okno
-     * @param {string} type - Typ modálního okna (stats, settings, receipt)
-     */
-    openModal: function(type) {
-        let modal;
-        
-        switch (type) {
-            case 'stats':
-                modal = this.DOMElements.statsModal;
-                Statistics.updateStats();
-                break;
-            case 'settings':
-                modal = this.DOMElements.settingsModal;
-                this.loadSettings();
-                break;
-            case 'receipt':
-                modal = this.DOMElements.receiptModal;
-                this.generateReceipt();
-                break;
-            default:
-                return;
-        }
-        
-        // Otevření modálního okna
-        modal.classList.add('active');
-        
-        // Přidání poslechače události pro zavření modálního okna kliknutím mimo obsah
-        modal.addEventListener('click', this.handleModalOutsideClick);
-    },
-    
-    /**
-     * Otevře modální okno pro vlastní cenu
-     * @param {Object} product - Produkt s vlastní cenou
-     */
-    openCustomPriceModal: function(product) {
-        const modal = this.DOMElements.customPriceModal;
-        
-        // Nastavení názvu produktu
-        this.DOMElements.customPriceProductName.textContent = product.name;
-        
-        // Vyčištění vstupního pole
-        this.DOMElements.customPriceInput.value = '';
-        
-        // Uložení ID produktu jako data atributu na tlačítku
-        this.DOMElements.applyCustomPriceBtn.dataset.productId = product.id;
-        
-        // Otevření modálního okna
-        modal.classList.add('active');
-        
-        // Zaměření na vstupní pole
-        setTimeout(() => {
-            this.DOMElements.customPriceInput.focus();
-        }, 100);
-        
-        // Přidání poslechače události pro zavření modálního okna kliknutím mimo obsah
-        modal.addEventListener('click', this.handleModalOutsideClick);
-    },
-    
-    /**
-     * Otevře modální okno pro City Tax
-     */
-    openCityTaxModal: function() {
-        const modal = this.DOMElements.cityTaxModal;
-        
-        // Vyčištění vstupních polí a nastavení výchozích hodnot
-        this.DOMElements.personsCountInput.value = '1';
-        this.DOMElements.nightsCountInput.value = '1';
-        
-        // Aktualizace celkové částky
-        this.updateCityTaxTotal();
-        
-        // Otevření modálního okna
-        modal.classList.add('active');
-        
-        // Přidání poslechače události pro zavření modálního okna kliknutím mimo obsah
-        modal.addEventListener('click', this.handleModalOutsideClick);
-    },
-    
-    /**
-     * Zavře modální okno
-     * @param {Event} e - Událost kliknutí
-     */
-    closeModal: function(e) {
-        const modal = e.target.closest('.modal');
-        
-        // Animace zavření
-        modal.classList.add('closing');
-        
-        // Zavření modálního okna po dokončení animace
-        setTimeout(() => {
-            modal.classList.remove('active');
-            modal.classList.remove('closing');
-            
-            // Odstranění poslechače události
-            modal.removeEventListener('click', this.handleModalOutsideClick);
-        }, 300);
-    },
-    
-    /**
-     * Zpracování kliknutí mimo obsah modálního okna
-     * @param {Event} e - Událost kliknutí
-     */
-    handleModalOutsideClick: function(e) {
-        if (e.target.classList.contains('modal')) {
-            const closeBtn = e.target.querySelector('.close-modal');
-            if (closeBtn) {
-                closeBtn.click();
-            }
-        }
-    },
-    
-    /**
-     * Aplikuje vlastní cenu produktu a přidá ho do košíku
-     */
-    applyCustomPrice: function() {
-        const productId = this.DOMElements.applyCustomPriceBtn.dataset.productId;
-        const priceInput = this.DOMElements.customPriceInput;
-        const price = parseFloat(priceInput.value);
-        
-        // Validace ceny
-        if (isNaN(price) || price <= 0) {
-            this.showNotification('Zadejte platnou cenu', 'error');
-            priceInput.focus();
-            return;
-        }
-        
-        // Získání produktu a nastavení vlastní ceny
-        const product = { ...Storage.getProducts().find(p => p.id === productId) };
-        product.price = price;
-        
-        // Přidání produktu do košíku
-        Cart.addItem(product);
-        this.updateCart();
-        
-        // Zavření modálního okna
-        const modal = this.DOMElements.customPriceModal;
-        modal.classList.remove('active');
-        modal.removeEventListener('click', this.handleModalOutsideClick);
-        
-        // Zobrazení upozornění
-        this.showNotification(`${product.name} přidán do košíku`, 'success');
-    },
-    
-    /**
-     * Aktualizuje celkovou částku City Tax
-     */
-    updateCityTaxTotal: function() {
-        const personsCount = parseInt(this.DOMElements.personsCountInput.value) || 1;
-        const nightsCount = parseInt(this.DOMElements.nightsCountInput.value) || 1;
-        
-        // Výpočet city tax (2 € * počet osob * počet nocí)
-        const cityTaxTotal = 2 * personsCount * nightsCount;
-        
-        // Zobrazení celkové částky
-        this.DOMElements.cityTaxTotalDisplay.textContent = `${cityTaxTotal} €`;
-    },
-    
-    /**
-     * Aplikuje City Tax a přidá ji do košíku
-     */
-    applyCityTax: function() {
-        const personsCount = parseInt(this.DOMElements.personsCountInput.value) || 1;
-        const nightsCount = parseInt(this.DOMElements.nightsCountInput.value) || 1;
-        
-        // Výpočet city tax (2 € * počet osob * počet nocí)
-        const cityTaxTotal = 2 * personsCount * nightsCount;
-        
-        // Získání produktu a nastavení ceny
-        const product = { ...Storage.getProducts().find(p => p.id === 'city-tax') };
-        product.price = cityTaxTotal;
-        product.name = `City Tax (${personsCount} osob × ${nightsCount} nocí)`;
-        
-        // Přidání produktu do košíku
-        Cart.addItem(product);
-        this.updateCart();
-        
-        // Zavření modálního okna
-        const modal = this.DOMElements.cityTaxModal;
-        modal.classList.remove('active');
-        modal.removeEventListener('click', this.handleModalOutsideClick);
-        
-        // Zobrazení upozornění
-        this.showNotification(`City Tax přidána do košíku`, 'success');
-    },
-    
-    /**
-     * Přepíná tmavý režim
-     */
-    toggleDarkMode: function() {
-        const body = document.body;
-        const themeIcon = this.DOMElements.themeToggle.querySelector('i');
-        const isDarkMode = body.classList.contains('dark-theme');
-        
-        // Přidání třídy pro přechod
-        body.classList.add('theme-transition');
-        
-        // Přepnutí třídy pro tmavý režim
-        if (isDarkMode) {
-            body.classList.remove('dark-theme');
-            themeIcon.classList.remove('fa-sun');
-            themeIcon.classList.add('fa-moon');
-        } else {
-            body.classList.add('dark-theme');
-            themeIcon.classList.remove('fa-moon');
-            themeIcon.classList.add('fa-sun');
-        }
-        
-        // Uložení nastavení
-        const settings = Storage.getSettings();
-        settings.darkMode = !isDarkMode;
-        Storage.saveSettings(settings);
-        
-        // Odstranění třídy pro přechod po dokončení animace
-        setTimeout(() => {
-            body.classList.remove('theme-transition');
-        }, 600);
-    },
-    
-    /**
-     * Nahraje nastavení do formuláře
-     */
-    loadSettings: function() {
-        const settings = Storage.getSettings();
-        
-        this.DOMElements.defaultLocationSelect.value = settings.defaultLocation;
-        this.DOMElements.currencyDisplaySelect.value = settings.currencyDisplay;
-        this.DOMElements.animationsToggle.checked = settings.animations;
-    },
-    
-    /**
-     * Uloží nastavení
-     */
-    saveSettings: function() {
-        const settings = {
-            defaultLocation: this.DOMElements.defaultLocationSelect.value,
-            currencyDisplay: this.DOMElements.currencyDisplaySelect.value,
-            animations: this.DOMElements.animationsToggle.checked,
-            darkMode: document.body.classList.contains('dark-theme')
-        };
-        
-        Storage.saveSettings(settings);
-        this.applySettings();
-        this.showNotification('Nastavení bylo uloženo', 'success');
-    },
-    
-    /**
-     * Aplikuje nastavení
-     */
-    applySettings: function() {
-        const settings = Storage.getSettings();
-        
-        // Aplikace tmavého režimu
-        const body = document.body;
-        const themeIcon = this.DOMElements.themeToggle.querySelector('i');
-        
-        if (settings.darkMode) {
-            body.classList.add('dark-theme');
-            themeIcon.classList.remove('fa-moon');
-            themeIcon.classList.add('fa-sun');
-        } else {
-            body.classList.remove('dark-theme');
-            themeIcon.classList.remove('fa-sun');
-            themeIcon.classList.add('fa-moon');
-        }
-        
-        // Aplikace animací
-        if (!settings.animations) {
-            body.classList.add('reduce-animations');
-        } else {
-            body.classList.remove('reduce-animations');
-        }
-        
-        // Nastavení výchozí lokace
-        const currentLocation = Storage.getCurrentLocation();
-        this.DOMElements.locationButtons.forEach(btn => {
-            if (btn.dataset.location === currentLocation) {
-                btn.classList.add('active');
-            } else {
-                btn.classList.remove('active');
-            }
-        });
-    },
-    
-    /**
-     * Vymaže všechna data
-     */
-    handleClearData: function() {
-        if (confirm('Opravdu chcete vymazat všechna data? Tato akce je nevratná.')) {
-            Storage.clearAll();
-            Storage.init();
-            
-            this.renderProducts();
-            this.updateCart();
-            this.showNotification('Všechna data byla vymazána', 'success');
-            
-            // Zavření modálního okna
-            this.DOMElements.settingsModal.classList.remove('active');
-        }
-    },
-    
-    /**
-     * Exportuje data
-     */
-    handleExportData: function() {
-        const data = Storage.exportData();
-        const dataStr = JSON.stringify(data, null, 2);
-        const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-        
-        const exportName = `villa_pos_export_${new Date().toISOString().slice(
+    --color-border: #444a52;
+    --color-shadow: rgba(0, 0, 0, 0.3);
+}
+
+/* Základní styly */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text);
+    line-height: 1.6;
+    min-height: 100vh;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+a {
+    color: var(--color-primary);
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* Header */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: var(--header-height);
+    padding: 0 1.5rem;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-small);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+}
+
+.logo {
+    height: 40px;
+    margin-right: 10px;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+#search-input {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    padding-right: 2.5rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    font-size: 0.9rem;
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    transition: border-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+#search-input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(79, 109, 245, 0.2);
+}
+
+#search-button {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--color-text-light);
+    font-size: 1rem;
+}
+
+.search-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-top: none;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    box-shadow: var(--shadow-medium);
+    z-index: 10;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+}
+
+.search-suggestion {
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+.search-suggestion:hover {
+    background-color: rgba(79, 109, 245, 0.1);
+}
+
+.header-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.icon-button {
+    background: none;
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text);
+    font-size: 1.1rem;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.icon-button:hover {
+    background-color: rgba(79, 109, 245, 0.1);
+    color: var(--color-primary);
+}
+
+/* Hlavní obsah */
+main {
+    padding-top: var(--header-height);
+    min-height: calc(100vh - var(--header-height));
+}
+
+.container {
+    display: flex;
+    height: calc(100vh - var(--header-height));
+}
+
+/* Sidebar */
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-small);
+    padding: 1.5rem;
+    overflow-y: auto;
+    transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.categories h3,
+.filters h3 {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    color: var(--color-text);
+}
+
+.categories ul {
+    list-style: none;
+    margin-bottom: 2rem;
+}
+
+.categories li {
+    padding: 0.6rem 1rem;
+    margin-bottom: 0.3rem;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.categories li:hover {
+    background-color: rgba(79, 109, 245, 0.1);
+    color: var(--color-primary);
+}
+
+.categories li.active {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+.filter-group {
+    margin-bottom: 1rem;
+}
+
+.filter-group label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+}
+
+.filter-group select,
+.filter-group input[type="text"],
+.filter-group input[type="number"] {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-size: 0.9rem;
+}
+
+.price-range {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.price-range input[type="range"] {
+    flex: 1;
+}
+
+#price-value {
+    font-size: 0.9rem;
+    min-width: 80px;
+    text-align: right;
+}
+
+/* Obsah */
+.content {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Košík */
+.cart-container {
+    width: var(--cart-width);
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-small);
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.cart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.cart-drop-area {
+    flex: 1;
+    border: 2px dashed var(--color-border);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    min-height: 200px;
+    overflow-y: auto;
+    transition: border-color var(--transition-speed), background-color var(--transition-speed);
+}
+
+.cart-drop-area.highlight {
+    border-color: var(--color-primary);
+    background-color: rgba(79, 109, 245, 0.05);
+}
+
+.cart-empty-message {
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+    text-align: center;
+    margin: 2rem 0;
+}
+
+.cart-items {
+    list-style: none;
+}
+
+.cart-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cart-item:last-child {
+    border-bottom: none;
+}
+
+.cart-item-details {
+    flex: 1;
+}
+
+.cart-item-name {
+    font-weight: 500;
+    margin-bottom: 0.2rem;
+}
+
+.cart-item-price {
+    font-size: 0.9rem;
+    color: var(--color-text-light);
+}
+
+.cart-item-quantity {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quantity-button {
+    width: 24px;
+    height: 24px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--color-text);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.quantity-button:hover {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+}
+
+.quantity-display {
+    width: 30px;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.cart-item-total {
+    font-weight: 500;
+    min-width: 70px;
+    text-align: right;
+}
+
+.cart-item-remove {
+    background: none;
+    border: none;
+    color: var(--color-danger);
+    margin-left: 0.5rem;
+    font-size: 0.9rem;
+    opacity: 0.7;
+    transition: opacity var(--transition-speed);
+}
+
+.cart-item-remove:hover {
+    opacity: 1;
+}
+
+.cart-summary {
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.dark-mode .cart-summary {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.cart-summary-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.cart-summary-row.total {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.cart-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Tlačítka */
+.primary-button,
+.secondary-button,
+.warning-button,
+.text-button {
+    padding: 0.7rem 1.2rem;
+    border-radius: var(--border-radius);
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background-color var(--transition-speed), color var(--transition-speed), opacity var(--transition-speed);
+}
+
+.primary-button {
+    background-color: var(--color-primary);
+    color: white;
+    border: none;
+    flex: 1;
+}
+
+.primary-button:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.primary-button:disabled {
+    background-color: var(--color-secondary);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.secondary-button {
+    background-color: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+}
+
+.secondary-button:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .secondary-button:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.warning-button {
+    background-color: transparent;
